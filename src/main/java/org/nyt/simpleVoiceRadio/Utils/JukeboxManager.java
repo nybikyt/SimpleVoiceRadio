@@ -27,10 +27,10 @@ public class JukeboxManager {
             Map.entry(9, JukeboxSong.STRAD),
             Map.entry(10, JukeboxSong.WARD),
             Map.entry(11, JukeboxSong.ELEVEN),
-            Map.entry(12, JukeboxSong.CREATOR_MUSIC_BOX),
-            Map.entry(13, JukeboxSong.WAIT),
-            Map.entry(14, JukeboxSong.CREATOR),
-            Map.entry(15, JukeboxSong.PRECIPICE)
+            Map.entry(12, JukeboxSong.WAIT),
+            Map.entry(13, JukeboxSong.PRECIPICE),
+            Map.entry(14, JukeboxSong.OTHERSIDE),
+            Map.entry(15, JukeboxSong.FIVE)
     );
 
     public JukeboxManager(SimpleVoiceRadio plugin) {
