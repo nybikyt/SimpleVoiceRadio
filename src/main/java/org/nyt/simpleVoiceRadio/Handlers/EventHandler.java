@@ -50,7 +50,7 @@ public class EventHandler implements Listener {
                 blockData.setState("output");
             }
         }
-        displayEntityManager.setStateSkin(blockData.getTextures().get(1), blockData.getState());
+        displayEntityManager.setStateSkin(blockData.getTextures().get(3), blockData.getState());
     }
 
     private void breakRadio(Block block, DataManager.RadioData blockData, Boolean shouldModify, Boolean shouldDropItem) {
@@ -79,12 +79,13 @@ public class EventHandler implements Listener {
             Location center = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
             center.getBlock().setBlockData(Bukkit.createBlockData(material), true);
             center.setPitch(0f);
-            center.setYaw(yaw + 90f);
+            center.setYaw(yaw);
 
-            List<ItemDisplay> itemDisplays = displayEntityManager.createItemDisplays(center);
+            Location offset = center.clone().add(0,1,0);
+            List<ItemDisplay> itemDisplays = displayEntityManager.createItemDisplays(offset);
             int freq = plugin.getConfig().getBoolean("radio-block.redstone_frequency", false) ? event.getBlock().getBlockPower() : 1;
 
-            TextDisplay textDisplay = displayEntityManager.createTextDisplay(center, freq);
+            TextDisplay textDisplay = displayEntityManager.createTextDisplay(offset, freq);
 
             dataManager.setBlock(event.getBlock().getLocation(), freq, "output", itemDisplays, textDisplay);
             updateRadioData(dataManager.getBlock(event.getBlock().getLocation()), freq);

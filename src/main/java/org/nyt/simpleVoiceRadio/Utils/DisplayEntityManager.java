@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.TextDisplay;
@@ -20,6 +21,7 @@ import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class DisplayEntityManager {
@@ -30,34 +32,51 @@ public class DisplayEntityManager {
     }
 
     public List<ItemDisplay> createItemDisplays(Location loc) {
-        ArrayList<ItemDisplay> list = new ArrayList<>();
-        for (int i = 1; i <= 8; i++) {
-            ItemDisplay display = loc.getWorld().spawn(loc, ItemDisplay.class);
-            ItemStack item = ItemStack.of(Material.PLAYER_HEAD);
-            String skull_skin = plugin.getConfig().getString("radio-block.texture_parts." + i + ".skull_skin");
-            getSkullByValue(skull_skin, item);
+        ConfigurationSection textureSection = plugin.getConfig().getConfigurationSection("radio-block.texture_parts");
+        if (textureSection == null) return null;
 
+        List<ItemDisplay> list = new ArrayList<>();
+
+        textureSection.getKeys(false).forEach(key -> {
+            ConfigurationSection partSection = textureSection.getConfigurationSection(key);
+            if (partSection == null) return;
+
+            ItemDisplay display = loc.getWorld().spawn(loc, ItemDisplay.class);
+
+            ItemStack item = ItemStack.of(Material.PLAYER_HEAD);
+            String skullSkin = partSection.getString("skull_skin");
+            getSkullByValue(skullSkin, item);
+
+            display.setBrightness(new Display.Brightness(15,15));
             display.setItemStack(item);
             display.setViewRange(512);
-            display.setBrightness(new Display.Brightness(15,15));
-            Vector3f translation = parseVector(plugin.getConfig().getString("radio-block.texture_parts." + i + ".translation"), new Vector3f(0, 0, 0));
-            Vector3f scale = parseVector(plugin.getConfig().getString("radio-block.texture_parts." + i + ".scale"), new Vector3f(1.003f, 1.003f, 1.003f));
+
+            Vector3f translation = parseVector(
+                    partSection.getString("translation"),
+                    new Vector3f(0, 0, 0)
+            );
+            Vector3f scale = parseVector(
+                    partSection.getString("scale"),
+                    new Vector3f(1.001f, 1.001f, 1.001f)
+            );
+
             updateTransformation(display, translation, null, scale, null);
             list.add(display);
-        }
+        });
+
         return list;
     }
 
     public void setStateSkin(ItemDisplay display, String state) {
         String displaySkullSkin;
         if (state.equalsIgnoreCase("input")) {
-            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.1.input_state");
+            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.4.input_state");
         }
-        else if (state.equalsIgnoreCase("broadcasting")) {
-            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.3.broadcasting_state");
+        else if (state.equalsIgnoreCase("listen")) {
+            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.4.listen_state");
         }
         else {
-            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.1.skull_skin");
+            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.4.skull_skin");
         }
         ItemStack displayItem = display.getItemStack();
         getSkullByValue(displaySkullSkin, displayItem);
@@ -67,14 +86,16 @@ public class DisplayEntityManager {
 
     public TextDisplay createTextDisplay(Location loc, int frequency) {
         TextDisplay display = loc.getWorld().spawn(loc, TextDisplay.class);
+
         display.text(Component.text(String.valueOf(frequency), NamedTextColor.DARK_RED));
         display.setBackgroundColor(Color.fromARGB(0,0,0,0));
         display.setViewRange(512);
+
         display.setBrightness(new Display.Brightness(15,15));
         Vector3f scale = new Vector3f(1.5f,1.435f,0);
-        Vector3f translation = new Vector3f(-0.501f,-0.01f,-0.0185f);
+        Vector3f translation = new Vector3f(0.0185f,-0.99f,-0.501f);
 
-        Quaternionf leftRot = new Quaternionf().rotateY((float) Math.toRadians(270));
+        Quaternionf leftRot = new Quaternionf().rotateY((float) Math.toRadians(180));
         updateTransformation(display, translation, leftRot, scale, null);
 
         return display;
@@ -118,17 +139,17 @@ public class DisplayEntityManager {
         display.setTransformation(newTrans);
     }
 
-    private Vector3f parseVector(String s, Vector3f defaultVec) {
-        if (s == null || s.isEmpty()) return defaultVec;
+    private Vector3f parseVector(String string, Vector3f defaultVector) {
+        if (string == null || string.isEmpty()) return defaultVector;
         try {
-            String[] parts = s.split(",");
-            if (parts.length != 3) return defaultVec;
+            String[] parts = string.split(",");
+            if (parts.length != 3) return defaultVector;
             float x = Float.parseFloat(parts[0]);
             float y = Float.parseFloat(parts[1]);
             float z = Float.parseFloat(parts[2]);
             return new Vector3f(x, y, z);
         } catch (Exception e) {
-            return defaultVec;
+            return defaultVector;
         }
     }
 

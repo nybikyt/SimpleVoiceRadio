@@ -19,13 +19,11 @@ public class VoiceAddon implements VoicechatPlugin {
     private final SimpleVoiceRadio plugin;
     private final JukeboxManager jukeboxManager;
     private final Map<Location, LocationalAudioChannel> outputChannels = new ConcurrentHashMap<>();
-    private final FileConfiguration config;
 
     public VoiceAddon(DataManager dataManager, SimpleVoiceRadio plugin, JukeboxManager jukeboxManager) {
         this.dataManager = dataManager;
         this.plugin = plugin;
         this.jukeboxManager = jukeboxManager;
-        this.config = plugin.getConfig();
     }
 
     @Override
@@ -57,7 +55,7 @@ public class VoiceAddon implements VoicechatPlugin {
 
         if ( channel == null ) return null;
 
-        float radius = (float) config.getDouble("radio-block.output_radius", 16);
+        float radius = (float) plugin.getConfig().getDouble("radio-block.output_radius", 16);
         channel.setDistance(radius);
         outputChannels.put(location, channel);
 
@@ -106,7 +104,7 @@ public class VoiceAddon implements VoicechatPlugin {
 
     private void sendPacket(Location location, byte[] audioData) {
 
-        double inputRadius = config.getDouble("radio-block.input_search_radius", 15.0);
+        double inputRadius = plugin.getConfig().getDouble("radio-block.input_search_radius", 15.0);
         double inputRadiusSq = inputRadius * inputRadius;
 
         Optional<Map.Entry<Location, DataManager.RadioData>> inputOpt =
@@ -120,8 +118,6 @@ public class VoiceAddon implements VoicechatPlugin {
         if (frequency == 0) return;
 
         Map<Location, DataManager.RadioData> outputRadios = dataManager.getAllRadiosByStateAndFrequency("output", frequency);
-
-        boolean showParticles = System.currentTimeMillis() % 500 < 20;
 
         for (Map.Entry<Location, DataManager.RadioData> entry : outputRadios.entrySet()) {
             Location loc = entry.getKey();
@@ -147,12 +143,6 @@ public class VoiceAddon implements VoicechatPlugin {
                 double distance = location.distance(inputOpt.get().getKey());
                 jukeboxManager.updateJukeboxDisc(loc, JukeboxManager.calculateSignalLevel(distance, inputRadius));
                 channel.send(audioData);
-
-                if (showParticles) {
-                    loc.getWorld().spawnParticle(Particle.NOTE,
-                            loc.getX() + 0.5, loc.getY() + 1, loc.getZ() + 0.5,
-                            1, 0, 0, 0, 0, null, true);
-                }
             }
         }
     }
