@@ -20,12 +20,11 @@ public class JukeboxManager {
     }
 
     public static int calculateSignalLevel(double distance, double maxRadius) {
-        if (distance >= maxRadius) return 0;
+        if (distance > maxRadius) return 0;
 
-        double ratio = distance / maxRadius;
-        double level = 15.0 * Math.pow(1.0 - ratio, 0.5);
+        int signalLevel = 15 - (int) Math.floor(distance / maxRadius * 15);
 
-        return Math.max(0, Math.min(15, (int) Math.round(level)));
+        return Math.max(0, Math.min(15, signalLevel));
     }
 
     public void updateJukeboxDisc(Location location, int signalLevel) {

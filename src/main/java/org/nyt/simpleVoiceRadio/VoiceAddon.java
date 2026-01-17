@@ -111,7 +111,6 @@ public class VoiceAddon implements VoicechatPlugin {
                                 && e.getKey().distanceSquared(location) <= inputRadiusSq)
                         .toList();
 
-        // Если нет аудио или нет входных радио рядом - очищаем всё и выходим
         if (audioData == null || audioData.length == 0 || nearbyInputRadios.isEmpty()) {
             if (!activeOutputs.isEmpty()) {
                 activeOutputs.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
@@ -146,7 +145,8 @@ public class VoiceAddon implements VoicechatPlugin {
 
             if (inputForFreq.isEmpty()) continue;
 
-            double distance = location.distance(inputForFreq.get().getKey());
+            Location inputLoc = inputForFreq.get().getKey().toCenterLocation();
+            double distance = location.distance(inputLoc);
             int signalLevel = JukeboxManager.calculateSignalLevel(distance, inputRadius);
 
             for (Map.Entry<Location, DataManager.RadioData> entry : outputRadios.entrySet()) {
@@ -159,17 +159,18 @@ public class VoiceAddon implements VoicechatPlugin {
 
                 if (channel == null) continue;
 
+                jukeboxManager.updateJukeboxDisc(loc, signalLevel);
+                newActiveOutputs.add(loc);
+
                 Collection<ServerPlayer> nearbyPlayers = api.getPlayersInRange(
                         serverLevel,
                         api.createPosition(loc.getBlockX() + 0.5, loc.getBlockY() + 0.5, loc.getBlockZ() + 0.5),
                         channel.getDistance()
                 );
 
-                if (nearbyPlayers.isEmpty()) continue;
-
-                jukeboxManager.updateJukeboxDisc(loc, signalLevel);
-                channel.send(audioData);
-                newActiveOutputs.add(loc);
+                if (!nearbyPlayers.isEmpty()) {
+                    channel.send(audioData);
+                }
             }
         }
 
