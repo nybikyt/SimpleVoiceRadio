@@ -47,7 +47,6 @@ public class DisplayEntityManager {
             String skullSkin = partSection.getString("skull_skin");
             getSkullByValue(skullSkin, item);
 
-            display.setBrightness(new Display.Brightness(15,15));
             display.setItemStack(item);
             display.setViewRange(512);
 
@@ -93,7 +92,7 @@ public class DisplayEntityManager {
 
         display.setBrightness(new Display.Brightness(15,15));
         Vector3f scale = new Vector3f(1.5f,1.435f,0);
-        Vector3f translation = new Vector3f(0.0185f,-0.99f,-0.501f);
+        Vector3f translation = new Vector3f(0.0185f,-1.01f,-0.501f);
 
         Quaternionf leftRot = new Quaternionf().rotateY((float) Math.toRadians(180));
         updateTransformation(display, translation, leftRot, scale, null);

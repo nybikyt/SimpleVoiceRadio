@@ -131,7 +131,7 @@ public class VoiceAddon implements VoicechatPlugin {
 
             Collection<ServerPlayer> nearbyPlayers = api.getPlayersInRange(
                     serverLevel,
-                    api.createPosition(loc.getX() + 0.5, loc.getY() + 0.5, loc.getZ() + 0.5),
+                    api.createPosition(loc.getBlockX() + 0.5, loc.getBlockY() + 0.5, loc.getBlockZ() + 0.5),
                     channel.getDistance()
             );
 

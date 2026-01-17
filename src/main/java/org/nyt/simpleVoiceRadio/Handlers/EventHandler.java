@@ -76,19 +76,19 @@ public class EventHandler implements Listener {
         if (event.getItemInHand().getPersistentDataContainer().get(NamespacedKey.fromString("radio"), PersistentDataType.BOOLEAN) == null) return;
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             float yaw = Math.round(event.getPlayer().getYaw() / 90f) * 90f;
-            Location center = event.getBlock().getLocation().add(0.5, 0.5, 0.5);
+            Location center = event.getBlock().getLocation().toCenterLocation();
             center.getBlock().setBlockData(Bukkit.createBlockData(material), true);
             center.setPitch(0f);
             center.setYaw(yaw);
 
             Location offset = center.clone().add(0,1,0);
             List<ItemDisplay> itemDisplays = displayEntityManager.createItemDisplays(offset);
-            int freq = plugin.getConfig().getBoolean("radio-block.redstone_frequency", false) ? event.getBlock().getBlockPower() : 1;
+            int frequency = plugin.getConfig().getBoolean("radio-block.redstone_frequency", false) ? event.getBlock().getBlockPower() : 1;
 
-            TextDisplay textDisplay = displayEntityManager.createTextDisplay(offset, freq);
+            TextDisplay textDisplay = displayEntityManager.createTextDisplay(offset, frequency);
 
-            dataManager.setBlock(event.getBlock().getLocation(), freq, "output", itemDisplays, textDisplay);
-            updateRadioData(dataManager.getBlock(event.getBlock().getLocation()), freq);
+            dataManager.setBlock(event.getBlock().getLocation(), frequency, "output", itemDisplays, textDisplay);
+            updateRadioData(dataManager.getBlock(event.getBlock().getLocation()), frequency);
 
             if (addon != null) addon.createChannel(event.getBlock().getLocation());
         }, 1L);
@@ -159,11 +159,11 @@ public class EventHandler implements Listener {
         if (player.isSneaking() && !redstoneMode) {
             freq = blockData.getFrequency() + 1;
             if (freq > plugin.getConfig().getInt("radio-block.max_frequency", 15)) freq = 1;
-            player.getWorld().playSound(event.getClickedBlock().getLocation(), Sound.BLOCK_NOTE_BLOCK_BIT, SoundCategory.MASTER, 3, 2);
+            player.getWorld().playSound(event.getClickedBlock().getLocation().toCenterLocation(), Sound.BLOCK_NOTE_BLOCK_XYLOPHONE, SoundCategory.MASTER, 1f, 0.9f);
         } else {
             if (redstoneMode && currentPower <= 0) return;
 
-            player.getWorld().playSound(event.getClickedBlock().getLocation(), Sound.BLOCK_COPPER_BULB_TURN_ON, SoundCategory.MASTER, 3, 0);
+            player.getWorld().playSound(event.getClickedBlock().getLocation(), Sound.BLOCK_COPPER_BULB_TURN_ON, SoundCategory.MASTER, 1, 0);
 
             if (blockData.getState().equals("input")) blockData.setState("output");
             else if (blockData.getState().equals("output")) blockData.setState("input");
