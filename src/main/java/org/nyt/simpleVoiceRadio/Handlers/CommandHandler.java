@@ -4,12 +4,16 @@ import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.nyt.simpleVoiceRadio.Misc.Item;
+import org.nyt.simpleVoiceRadio.Misc.RecipeHolder;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 import java.util.Collection;
 import java.util.List;
@@ -20,7 +24,8 @@ public class CommandHandler implements BasicCommand {
     private final Item item;
     private final static Map<String, String> arguments = Map.ofEntries(
             Map.entry("reload", "simple_voice_radio.reload_config"),
-            Map.entry("give", "simple_voice_radio.give")
+            Map.entry("give", "simple_voice_radio.give"),
+            Map.entry("view_craft", "simple_voice_radio.can_view_craft")
     );
     private final Component usage = Component.text("Usage: /simple_voice_radio " + arguments.keySet().stream().toList(), TextColor.color(214, 54, 67));
     private final Component noPermission = Component.text("You don't have permission to use this command!", TextColor.color(214, 54, 67));
@@ -66,6 +71,19 @@ public class CommandHandler implements BasicCommand {
                             ItemStack radioItem = this.item.getItem();
                             player.getInventory().addItem(radioItem);
                             player.sendMessage(Component.text("Radio has been given!", TextColor.color(245, 203, 78)));
+                        } else sender.sendMessage(playerOnly);
+                    }
+                    case "view_craft" -> {
+                        if (sender instanceof Player player) {
+                            RecipeHolder holder = new RecipeHolder();
+                            Inventory inventory = Bukkit.createInventory(
+                                    holder,
+                                    InventoryType.WORKBENCH,
+                                    Component.text("Radio craft recipe")
+                            );
+                            holder.setInventory(inventory);
+                            inventory.setContents(item.getRecipeIngredients());
+                            player.openInventory(inventory);
                         } else sender.sendMessage(playerOnly);
                     }
                 }

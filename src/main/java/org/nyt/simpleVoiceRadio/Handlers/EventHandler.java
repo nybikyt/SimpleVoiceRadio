@@ -12,13 +12,14 @@ import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.nyt.simpleVoiceRadio.Misc.Item;
+import org.nyt.simpleVoiceRadio.Misc.RecipeHolder;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 import org.nyt.simpleVoiceRadio.Utils.DataManager;
 import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
@@ -70,6 +71,13 @@ public class EventHandler implements Listener {
 
         if ( shouldModify ) block.setType(Material.AIR);
         if ( shouldDropItem ) block.getWorld().dropItemNaturally(block.getLocation(), item.getItem());
+    }
+
+    @org.bukkit.event.EventHandler
+    public void onRecipeInventoryClick(InventoryClickEvent event) {
+        if (event.getInventory().getHolder() instanceof RecipeHolder) {
+            event.setCancelled(true);
+        }
     }
 
     @org.bukkit.event.EventHandler
@@ -171,7 +179,7 @@ public class EventHandler implements Listener {
             if (freq > plugin.getConfig().getInt("radio-block.max_frequency", 15)) freq = 1;
             player.getWorld().playSound(event.getClickedBlock().getLocation().toCenterLocation(), Sound.BLOCK_NOTE_BLOCK_BIT, SoundCategory.MASTER, 1f, 2f);
         } else if (player.hasPermission("simple_voice_radio.can_switch_mode")) {
-            if (redstoneMode && currentPower <= 0) return;
+            if (redstoneMode && currentPower <= 0 || blockData.getState().equals("listen")) return;
 
             player.getWorld().playSound(event.getClickedBlock().getLocation(), Sound.BLOCK_COPPER_BULB_TURN_ON, SoundCategory.MASTER, 3, 0);
 

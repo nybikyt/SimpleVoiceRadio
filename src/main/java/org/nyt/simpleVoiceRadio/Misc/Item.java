@@ -4,13 +4,19 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import org.nyt.simpleVoiceRadio.Utils.MiniMessageSerializer;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class Item {
     private final SimpleVoiceRadio plugin;
@@ -80,6 +86,31 @@ public class Item {
         }
 
         plugin.getServer().addRecipe(recipe);
+    }
+
+    public ItemStack[] getRecipeIngredients() {
+        NamespacedKey key = new NamespacedKey(plugin, "radio");
+        Recipe recipe = plugin.getServer().getRecipe(key);
+
+        if (!(recipe instanceof ShapedRecipe shapedRecipe)) return new ItemStack[10];
+
+        List<ItemStack> ingredients = new ArrayList<>();
+        ingredients.add(getItem()); // Слот 0 - результат крафта
+
+        Map<Character, RecipeChoice> choiceMap = shapedRecipe.getChoiceMap();
+
+        for (String row : shapedRecipe.getShape()) {
+            for (char c : row.toCharArray()) {
+                RecipeChoice choice = choiceMap.get(c);
+                if (choice instanceof RecipeChoice.MaterialChoice materialChoice) {
+                    ingredients.add(new ItemStack(materialChoice.getChoices().get(0)));
+                } else {
+                    ingredients.add(new ItemStack(Material.AIR));
+                }
+            }
+        }
+
+        return ingredients.toArray(new ItemStack[0]);
     }
 
     public void reloadCraft() {
