@@ -3,12 +3,10 @@ package org.nyt.simpleVoiceRadio;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import de.maxhenkel.voicechat.api.BukkitVoicechatService;
-import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bukkit.plugin.Plugin;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.nyt.simpleVoiceRadio.Handlers.CommandHandler;
 import org.nyt.simpleVoiceRadio.Handlers.EventHandler;
@@ -41,6 +39,9 @@ public final class SimpleVoiceRadio extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        new Metrics(this, 28921);
+        LOGGER.info("bStats metrics initialized");
+
         dataManager.load();
         dataManager.startAutoSave();
 

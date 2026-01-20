@@ -83,6 +83,11 @@ public class EventHandler implements Listener {
     @org.bukkit.event.EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         if (!event.getItemInHand().getPersistentDataContainer().has(NamespacedKey.fromString("radio"), PersistentDataType.BOOLEAN)) return;
+        if (dataManager.getRadioCountInChunk(event.getBlock().getLocation()) >= plugin.getConfig().getInt("radio-block.blocks_per_chunk_limit", 10)) {
+            event.setCancelled(true);
+            return;
+        }
+
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             float yaw = Math.round(event.getPlayer().getYaw() / 90f) * 90f;
             Location center = event.getBlock().getLocation().toCenterLocation();
@@ -160,11 +165,6 @@ public class EventHandler implements Listener {
 
         DataManager.RadioData blockData = dataManager.getBlock(event.getClickedBlock().getLocation());
         if (blockData == null) return;
-
-        ItemStack item = event.getItem() == null ? new ItemStack(Material.AIR) : event.getItem();
-        boolean isRadio = item.getItemMeta() != null && item.getItemMeta().getPersistentDataContainer().has(NamespacedKey.fromString("radio"));
-
-        if (isRadio) return;
 
         event.setCancelled(true);
         Player player = event.getPlayer();

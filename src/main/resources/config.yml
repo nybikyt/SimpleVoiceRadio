@@ -11,7 +11,7 @@ radio:
 radio-block:
   input_search_radius: 15
   max_frequency: 15
-  world: world
+  blocks_per_chunk_limit: 10
   output_radius: 16
   redstone_frequency: false
   texture_parts:
