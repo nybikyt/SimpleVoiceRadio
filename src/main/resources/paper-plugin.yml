@@ -1,7 +1,7 @@
 name: SimpleVoiceRadio
 version: '0.0.3'
 main: org.nyt.simpleVoiceRadio.SimpleVoiceRadio
-api-version: '1.21.1'
+api-version: '1.21'
 permissions:
   simple_voice_radio.command:
     description: Can player see the plugin`s command?
