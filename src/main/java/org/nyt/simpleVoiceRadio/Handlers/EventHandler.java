@@ -59,19 +59,23 @@ public class EventHandler implements Listener {
     private void breakRadio(Block block, DataManager.RadioData blockData, Boolean shouldModify, Boolean shouldDropItem) {
         blockData.getTextures().forEach(Entity::remove);
         blockData.getFrequencyDisplay().remove();
-        Jukebox jukebox = (Jukebox) block.getState();
+
+        if (block.getType().equals(material)) {
+            Jukebox jukebox = (Jukebox) block.getState();
+            jukebox.setRecord(null);
+            jukebox.update();
+        }
 
         dataManager.removeBlock(block.getLocation());
+
         if (addon != null) {
             addon.deleteChannel(block.getLocation());
             addon.updateOutputChannels();
         }
 
-        jukebox.setRecord(null);
-        jukebox.update();
+        if (shouldModify) block.setType(Material.AIR);
 
-        if ( shouldModify ) block.setType(Material.AIR);
-        if ( shouldDropItem ) block.getWorld().dropItemNaturally(block.getLocation(), item.getItem());
+        if (shouldDropItem) block.getWorld().dropItemNaturally(block.getLocation(), item.getItem());
     }
 
     @org.bukkit.event.EventHandler
@@ -197,20 +201,18 @@ public class EventHandler implements Listener {
 
     @org.bukkit.event.EventHandler
     public void onBlockPhysics(BlockPhysicsEvent event) {
-        try {
-            DataManager.RadioData blockData = dataManager.getBlock(event.getBlock().getLocation());
-            if (blockData == null) return;
+        DataManager.RadioData blockData = dataManager.getBlock(event.getBlock().getLocation());
+        if (blockData == null) return;
 
-            if (!event.getBlock().getBlockData().getMaterial().equals(material)) {
-                breakRadio(event.getBlock(), blockData, false, false);
-            } else if (plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) {
-                String oldState = blockData.getState();
-                updateRadioData(blockData, event.getBlock().getBlockPower());
+        if (!event.getBlock().getType().equals(material)) {
+            breakRadio(event.getBlock(), blockData, false, false);
+            return;
+        }
 
-                if (addon != null && !oldState.equals(blockData.getState())) addon.updateOutputChannels();
-            }
-        } catch (Exception e) {
-            SimpleVoiceRadio.LOGGER.error(e);
+        if (plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) {
+            String oldState = blockData.getState();
+            updateRadioData(blockData, event.getBlock().getBlockPower());
+            if (addon != null && !oldState.equals(blockData.getState())) addon.updateOutputChannels();
         }
     }
 }
