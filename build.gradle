@@ -1,7 +1,6 @@
 plugins {
     id 'java'
     id("xyz.jpenilla.run-paper") version "2.3.1"
-    id 'com.gradleup.shadow' version '9.3.1'
 }
 
 group = 'org.nyt'
@@ -18,9 +17,8 @@ repositories {
 
 dependencies {
     compileOnly ("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
-    compileOnly ("de.maxhenkel.voicechat:voicechat-api:2.6.0")
+    implementation ("de.maxhenkel.voicechat:voicechat-api:2.6.0")
     compileOnly ("net.dmulloy2:ProtocolLib:5.4.0")
-    implementation ("org.bstats:bstats-bukkit:3.1.0")
 }
 
 tasks {
@@ -56,19 +54,9 @@ processResources {
     }
 }
 
-shadowJar {
-    relocate 'org.bstats', 'org.nyt.libs.bstats'
-    mergeServiceFiles()
-    archiveClassifier.set('')
-}
-
-build {
-    dependsOn shadowJar
-}
-
 tasks.register('copyJarToServer', Copy) {
-    dependsOn shadowJar
-    from shadowJar.archiveFile
+    dependsOn jar
+    from jar.archiveFile
     into 'C:/Users/Daniil/Desktop/server/plugins'
 }
 
