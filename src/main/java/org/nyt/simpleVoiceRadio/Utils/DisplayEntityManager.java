@@ -67,13 +67,13 @@ public class DisplayEntityManager {
     public void setStateSkin(ItemDisplay display, String state) {
         String displaySkullSkin;
         if (state.equalsIgnoreCase("input")) {
-            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.4.input_state");
+            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.part_4.input_state");
         }
         else if (state.equalsIgnoreCase("listen")) {
-            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.4.listen_state");
+            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.part_4.listen_state");
         }
         else {
-            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.4.skull_skin");
+            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.part_4.skull_skin");
         }
         ItemStack displayItem = display.getItemStack();
         getSkullByValue(displaySkullSkin, displayItem);

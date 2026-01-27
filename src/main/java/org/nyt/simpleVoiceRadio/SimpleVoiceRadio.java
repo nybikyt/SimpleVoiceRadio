@@ -38,14 +38,14 @@ public final class SimpleVoiceRadio extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+        item.registerCraft();
+
         new Metrics(this, 28921);
         LOGGER.info("bStats metrics initialized");
 
         dataManager.load();
         dataManager.startAutoSave();
-
-        item.registerCraft();
-        saveDefaultConfig();
 
         PacketHandler packetHandler = new PacketHandler(this);
         packetHandler.registerActionBarListener();

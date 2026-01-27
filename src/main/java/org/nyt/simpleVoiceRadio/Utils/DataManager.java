@@ -150,20 +150,6 @@ public class DataManager {
         return result;
     }
 
-    public void updateState(Location loc, String newState) {
-        RadioData radioData = getBlock(loc);
-        if (radioData != null) {
-            radioData.setState(newState);
-        }
-    }
-
-    public void updateFrequency(Location loc, int newFrequency) {
-        RadioData radioData = getBlock(loc);
-        if (radioData != null) {
-            radioData.setFrequency(newFrequency);
-        }
-    }
-
     private String serializeLocation(Location loc) {
         return loc.getBlockX() + "," +
                 loc.getBlockY() + "," +
