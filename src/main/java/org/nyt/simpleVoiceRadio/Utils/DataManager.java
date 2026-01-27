@@ -9,10 +9,7 @@ import org.bukkit.entity.TextDisplay;
 import org.bukkit.scheduler.BukkitTask;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -20,6 +17,7 @@ public class DataManager {
     private final SimpleVoiceRadio plugin;
     private final File dataFile;
     private final Map<String, Map<String, RadioData>> data = new ConcurrentHashMap<>();
+    private Set<String> repeaters = ConcurrentHashMap.newKeySet();
     private BukkitTask saveTask;
 
     public DataManager(SimpleVoiceRadio plugin) {
@@ -36,6 +34,25 @@ public class DataManager {
             saveTask.cancel();
         }
         saveSync();
+    }
+
+    public void addRepeater(Location loc) {
+        repeaters.add(serializeLocationWithWorld(loc));
+    }
+
+    public void removeRepeater(Location loc) {
+        repeaters.remove(serializeLocationWithWorld(loc));
+    }
+
+    public Set<Location> getAllRepeaters() {
+        Set<Location> locations = new HashSet<>();
+        for (String s : repeaters) {
+            Location loc = deserializeLocationWithWorld(s);
+            if (loc != null) {
+                locations.add(loc);
+            }
+        }
+        return locations;
     }
 
     public void removeBlock(Location loc) {
@@ -67,18 +84,41 @@ public class DataManager {
     public void load() {
         if (!dataFile.exists()) return;
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(dataFile))) {
-            Object obj = in.readObject();
-
-            if (obj instanceof Map) {
+            Object objData = in.readObject();
+            if (objData instanceof Map) {
                 data.clear();
-                Map<String, Map<String, RadioData>> loadedData = (Map<String, Map<String, RadioData>>) obj;
+                Map<String, Map<String, RadioData>> loadedData = (Map<String, Map<String, RadioData>>) objData;
                 for (Map.Entry<String, Map<String, RadioData>> entry : loadedData.entrySet()) {
                     data.put(entry.getKey(), new ConcurrentHashMap<>(entry.getValue()));
                 }
                 SimpleVoiceRadio.LOGGER.info("Loaded {} chunks with radio blocks", data.size());
             }
+
+            try {
+                Object objRepeaters = in.readObject();
+                if (objRepeaters instanceof Set) {
+                    repeaters.clear();
+                    repeaters.addAll((Set<String>) objRepeaters);
+                    SimpleVoiceRadio.LOGGER.info("Loaded {} lightning rod repeaters", repeaters.size());
+                }
+            } catch (EOFException e) {
+                SimpleVoiceRadio.LOGGER.info("No repeaters found in save file (most likely legacy format).");
+            }
+
         } catch (IOException | ClassNotFoundException e) {
             SimpleVoiceRadio.LOGGER.error("Error loading data: {}", e.getMessage());
+        }
+    }
+
+    private void saveSync() {
+        try {
+            if (!dataFile.getParentFile().exists()) dataFile.getParentFile().mkdirs();
+            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(dataFile))) {
+                out.writeObject(data);
+                out.writeObject(new HashSet<>(repeaters));
+            }
+        } catch (IOException e) {
+            SimpleVoiceRadio.LOGGER.error("Error saving data: {}", e.getMessage());
         }
     }
 
@@ -156,6 +196,13 @@ public class DataManager {
                 loc.getBlockZ();
     }
 
+    private String serializeLocationWithWorld(Location loc) {
+        World world = loc.getWorld();
+        if (world == null) return null;
+        return loc.getWorld().getName() + "," + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ();
+    }
+
+
     private Location deserializeLocation(String serialized, World world) {
         String[] parts = serialized.split(",");
         int x = Integer.parseInt(parts[0]);
@@ -164,17 +211,20 @@ public class DataManager {
         return new Location(world, x, y, z);
     }
 
-    private void saveSync() {
+    private Location deserializeLocationWithWorld(String serialized) {
         try {
-            if (!dataFile.getParentFile().exists()) dataFile.getParentFile().mkdirs();
-            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(dataFile))) {
-                out.writeObject(data);
-            }
-        } catch (IOException e) {
-            SimpleVoiceRadio.LOGGER.error("Error saving data: {}", e.getMessage());
+            String[] parts = serialized.split(",");
+            if (parts.length != 4) return null;
+            World world = Bukkit.getWorld(parts[0]);
+            if (world == null) return null;
+            int x = Integer.parseInt(parts[1]);
+            int y = Integer.parseInt(parts[2]);
+            int z = Integer.parseInt(parts[3]);
+            return new Location(world, x, y, z);
+        } catch (Exception e) {
+            return null;
         }
     }
-
 
     public static class RadioData implements Serializable {
 

@@ -10,6 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.nyt.simpleVoiceRadio.Handlers.CommandHandler;
 import org.nyt.simpleVoiceRadio.Handlers.EventHandler;
 import org.nyt.simpleVoiceRadio.Handlers.PacketHandler;
+import org.nyt.simpleVoiceRadio.Handlers.RepeaterHandler;
 import org.nyt.simpleVoiceRadio.Misc.Item;
 import org.nyt.simpleVoiceRadio.Misc.Metrics;
 import org.nyt.simpleVoiceRadio.Utils.DataManager;
@@ -62,6 +63,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         if (service != null) {
             voiceAddon = new VoiceAddon(dataManager, this, jukeboxManager);
             service.registerPlugin(voiceAddon);
+            getServer().getPluginManager().registerEvents(new RepeaterHandler(voiceAddon), this);
         } else {
             LOGGER.error("Error while loading addon! Bye :(");
         }

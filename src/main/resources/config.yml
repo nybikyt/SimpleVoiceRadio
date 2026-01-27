@@ -48,6 +48,18 @@ radio-block:
   # If false, players can manually change frequencies by shift-clicking
   redstone_frequency: false
 
+  # How far (in blocks) the radio will receive signal
+  # If distance between radios is higher than this field, radio receiver won't receive signal.
+  transmission_distance: 100
+  # Plugin uses BFS for searching retranslators. This field sets maximum amount of hops during search.
+  # values higher 50 may destroy your servers TPS if some player wish.
+  max_hops: 15
+
+lightning-rod:
+  # How far (in blocks) the lightning rod repeats signal.
+  # Lightning rod may repeat signal to radio or another lightning rod.
+  repeat_distance: 200
+
   # Visual appearance of the radio block (8 parts total)
   # Each part is a player head positioned to create the 3D radio model
   texture_parts:
