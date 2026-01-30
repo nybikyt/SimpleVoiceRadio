@@ -98,6 +98,14 @@ public class EventHandler implements Listener {
 
             Location offset = center.clone().add(0,1,0);
             List<ItemDisplay> itemDisplays = displayEntityManager.createItemDisplays(offset);
+
+            if (itemDisplays == null || itemDisplays.isEmpty()) {
+                SimpleVoiceRadio.LOGGER.error("Failed to create radio displays at {}. Check config.yml for 'radio-block.texture_parts'", event.getBlock().getLocation());
+                event.getBlock().setType(Material.AIR);
+                event.getPlayer().sendMessage(Component.text("Failed to create radio block! Check server logs.", NamedTextColor.RED));
+                return;
+            }
+
             int frequency = plugin.getConfig().getBoolean("radio-block.redstone_frequency", false) ? event.getBlock().getBlockPower() : 1;
 
             TextDisplay textDisplay = displayEntityManager.createTextDisplay(offset, frequency);

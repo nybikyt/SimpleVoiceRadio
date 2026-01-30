@@ -27,6 +27,11 @@ radio:
       - iron_ingot,jukebox,iron_ingot
       - redstone,netherite_ingot,redstone
 
+lightning-rod:
+  # How far (in blocks) the lightning rod repeats signal.
+  # Lightning rod may repeat signal to radio or another lightning rod.
+  repeat_distance: 200
+
 radio-block:
   # How far (in blocks) the radio searches for nearby input radios
   # When a player speaks, the plugin looks for input radios within this radius
@@ -55,11 +60,6 @@ radio-block:
   # values higher 50 may destroy your servers TPS if some player wish.
   max_hops: 15
 
-lightning-rod:
-  # How far (in blocks) the lightning rod repeats signal.
-  # Lightning rod may repeat signal to radio or another lightning rod.
-  repeat_distance: 200
-
   # Visual appearance of the radio block (8 parts total)
   # Each part is a player head positioned to create the 3D radio model
   texture_parts:
@@ -82,9 +82,7 @@ lightning-rod:
       scale: 1.001,1.001,1.001
       translation: -0.25,-1,-0.25
       skull_skin: ewogICJ0aW1lc3RhbXAiIDogMTc2ODU4Mzc2NTc0NiwKICAicHJvZmlsZUlkIiA6ICI0YWU5MTM5MzZhOGU0MWU0YWNlMTYyYjI4YmM0MzMwMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJ6ZXJ2YXRpb24iLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjAxMTI4NjRlMTBiMGU4MTg1ZmQyYWU3MWJkNThkYTM1ODg2ZjFkMjA5MTM2ZDdjMmJiNDJjZjY3NTA5NTQzOCIKICAgIH0KICB9Cn0=
-
       input_state: ewogICJ0aW1lc3RhbXAiIDogMTc2ODU4NDYyMDMxMiwKICAicHJvZmlsZUlkIiA6ICIxN2I5ZDBmOWYxYzE0OTE5ODRkY2Y5ZGM2YzczZDYzYyIsCiAgInByb2ZpbGVOYW1lIiA6ICJuYWJlNDk3NSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9mZWE5ZWQ0NDkwMzUwNGQ2ODA1MTY2NGJjNTEzMjA5NDEwZWE5NWVmZTc3MWI1NDZjMTQwY2M3Y2UxNGU2YmMyIgogICAgfQogIH0KfQ==
-
       listen_state: ewogICJ0aW1lc3RhbXAiIDogMTc2ODU4NTIwNTAyMywKICAicHJvZmlsZUlkIiA6ICI0MDU4NDhjMmJjNTE0ZDhkOThkOTJkMGIwYzhiZDQ0YiIsCiAgInByb2ZpbGVOYW1lIiA6ICJMaWFtX1NhZ2UiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZmMyYTMwYTdjZmQ0OTEyNjg3OGU1ZGY1ODY4MzZjMWFjNzRmOGI3ODQ4YzUzNGZlYTYzMWU1ODk3ODQ4ODVmYiIKICAgIH0KICB9Cn0=
 
     5:
