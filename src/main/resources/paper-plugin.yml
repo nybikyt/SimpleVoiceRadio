@@ -1,7 +1,9 @@
 name: SimpleVoiceRadio
-version: '0.0.3'
+version: '0.0.4'
 main: org.nyt.simpleVoiceRadio.SimpleVoiceRadio
 api-version: '1.21'
+author: Nybik_YT
+description: Plugin that adds a radio block that lets players communicate over distances
 permissions:
   simple_voice_radio.command:
     description: Can player see the plugin`s command?
@@ -34,4 +36,8 @@ dependencies:
     ProtocolLib:
       load: BEFORE
       required: true
+      join-classpath: true
+    CustomDiscs:
+      load: BEFORE
+      required: false
       join-classpath: true

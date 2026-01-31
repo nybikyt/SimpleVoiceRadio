@@ -3,6 +3,7 @@ package org.nyt.simpleVoiceRadio;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import de.maxhenkel.voicechat.api.events.*;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.nyt.simpleVoiceRadio.Utils.DataManager;
@@ -18,6 +19,8 @@ public class VoiceAddon implements VoicechatPlugin {
     private final JukeboxManager jukeboxManager;
     private final Map<Location, LocationalAudioChannel> outputChannels = new ConcurrentHashMap<>();
     private final Set<Location> activeOutputs = ConcurrentHashMap.newKeySet();
+    private final Map<Location, UUID> activeDiscBroadcasts = new ConcurrentHashMap<>();
+    private final Set<Location> discActiveOutputs = ConcurrentHashMap.newKeySet();
 
     public VoiceAddon(DataManager dataManager, SimpleVoiceRadio plugin, JukeboxManager jukeboxManager) {
         this.dataManager = dataManager;
@@ -37,6 +40,7 @@ public class VoiceAddon implements VoicechatPlugin {
     public void registerEvents(EventRegistration eventRegistration) {
         eventRegistration.registerEvent(VoicechatServerStartedEvent.class, this::onServerStart);
         eventRegistration.registerEvent(MicrophonePacketEvent.class, this::onMicrophone);
+        eventRegistration.registerEvent(LocationalSoundPacketEvent.class, this::onLocationalPacket);
     }
 
     private void onServerStart(VoicechatServerStartedEvent event) {
@@ -85,6 +89,87 @@ public class VoiceAddon implements VoicechatPlugin {
         outputChannels.remove(location);
     }
 
+    public void startDiscBroadcast(Location radioLocation, UUID discChannelId) {
+        activeDiscBroadcasts.put(radioLocation, discChannelId);
+    }
+
+    public void stopDiscBroadcast(Location radioLocation) {
+        activeDiscBroadcasts.remove(radioLocation);
+
+        if (!discActiveOutputs.isEmpty()) {
+            discActiveOutputs.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+            discActiveOutputs.clear();
+        }
+    }
+
+    private void onLocationalPacket(LocationalSoundPacketEvent event) {
+        try {
+            UUID channelId = event.getPacket().getChannelId();
+            byte[] audioData = event.getPacket().getOpusEncodedData();
+
+            if (audioData == null || audioData.length == 0) return;
+
+            for (Map.Entry<Location, UUID> entry : activeDiscBroadcasts.entrySet()) {
+                if (!entry.getValue().equals(channelId)) continue;
+
+                Location radioLoc = entry.getKey();
+                DataManager.RadioData radioData = dataManager.getBlock(radioLoc);
+
+                if (radioData == null || !radioData.getState().equals("listen")) {
+                    stopDiscBroadcast(radioLoc);
+                    return;
+                }
+
+                sendDiscToOutputs(audioData, radioData.getFrequency());
+                return;
+            }
+
+        } catch (Exception e) {
+            SimpleVoiceRadio.LOGGER.error("Error processing locational packet: {}", e.getMessage());
+        }
+    }
+
+    private void sendDiscToOutputs(byte[] audioData, int frequency) {
+        if (frequency <= 0) return;
+
+        Map<Location, DataManager.RadioData> outputRadios =
+                dataManager.getAllRadiosByStateAndFrequency("output", frequency);
+
+        Set<Location> newDiscActiveOutputs = ConcurrentHashMap.newKeySet();
+
+        for (Location outputLoc : outputRadios.keySet()) {
+            if (!outputLoc.isChunkLoaded()) continue;
+
+            LocationalAudioChannel channel = outputChannels.computeIfAbsent(outputLoc, this::createChannel);
+            if (channel == null) continue;
+
+            newDiscActiveOutputs.add(outputLoc);
+
+            Collection<ServerPlayer> nearbyPlayers = api.getPlayersInRange(
+                    api.fromServerLevel(outputLoc.getWorld()),
+                    api.createPosition(outputLoc.getBlockX() + 0.5, outputLoc.getBlockY() + 0.5, outputLoc.getBlockZ() + 0.5),
+                    channel.getDistance()
+            );
+
+            if (!nearbyPlayers.isEmpty()) {
+                channel.send(audioData);
+            }
+        }
+
+        Set<Location> locationsToActivate = new HashSet<>(newDiscActiveOutputs);
+        Set<Location> locationsToDeactivate = discActiveOutputs.stream()
+                .filter(loc -> !newDiscActiveOutputs.contains(loc))
+                .collect(Collectors.toSet());
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            locationsToActivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 15));
+            locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+        });
+
+        discActiveOutputs.clear();
+        discActiveOutputs.addAll(newDiscActiveOutputs);
+    }
+
     private void onMicrophone(MicrophonePacketEvent event) {
         try {
             VoicechatConnection connection = event.getSenderConnection();
@@ -116,7 +201,10 @@ public class VoiceAddon implements VoicechatPlugin {
 
         if (audioData == null || audioData.length == 0 || nearbyInputRadios.isEmpty()) {
             if (!activeOutputs.isEmpty()) {
-                activeOutputs.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+                Set<Location> locationsToDeactivate = new HashSet<>(activeOutputs);
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+                });
                 activeOutputs.clear();
             }
             return;
@@ -129,13 +217,17 @@ public class VoiceAddon implements VoicechatPlugin {
 
         if (frequencies.isEmpty()) {
             if (!activeOutputs.isEmpty()) {
-                activeOutputs.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+                Set<Location> locationsToDeactivate = new HashSet<>(activeOutputs);
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+                });
                 activeOutputs.clear();
             }
             return;
         }
 
         Set<Location> newActiveOutputs = ConcurrentHashMap.newKeySet();
+        Map<Location, Integer> signalLevels = new ConcurrentHashMap<>();
 
         for (int frequency : frequencies) {
             Map<Location, DataManager.RadioData> outputRadios =
@@ -162,7 +254,7 @@ public class VoiceAddon implements VoicechatPlugin {
 
                 if (channel == null) continue;
 
-                jukeboxManager.updateJukeboxDisc(loc, signalLevel);
+                signalLevels.put(loc, signalLevel);
                 newActiveOutputs.add(loc);
 
                 Collection<ServerPlayer> nearbyPlayers = api.getPlayersInRange(
@@ -177,9 +269,14 @@ public class VoiceAddon implements VoicechatPlugin {
             }
         }
 
-        activeOutputs.stream()
+        Set<Location> locationsToDeactivate = activeOutputs.stream()
                 .filter(loc -> !newActiveOutputs.contains(loc))
-                .forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+                .collect(Collectors.toSet());
+
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            signalLevels.forEach(jukeboxManager::updateJukeboxDisc);
+            locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+        });
 
         activeOutputs.clear();
         activeOutputs.addAll(newActiveOutputs);

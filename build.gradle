@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'org.nyt'
-version = '0.0.3'
+version = '0.0.4'
 
 repositories {
     mavenCentral()
@@ -13,12 +13,14 @@ repositories {
         url = "https://repo.papermc.io/repository/maven-public/"
     }
     maven { url = 'https://maven.maxhenkel.de/repository/public' }
+    maven { url = 'https://repo.subkek.space/maven-public'}
 }
 
 dependencies {
-    compileOnly ("io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT")
-    implementation ("de.maxhenkel.voicechat:voicechat-api:2.6.0")
-    compileOnly ("net.dmulloy2:ProtocolLib:5.4.0")
+    compileOnly "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
+    compileOnly "de.maxhenkel.voicechat:voicechat-api:2.6.0"
+    compileOnly "space.subkek:customdiscs-api:1.0.0-SNAPSHOT"
+    compileOnly "net.dmulloy2:ProtocolLib:5.4.0"
 }
 
 tasks {

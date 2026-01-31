@@ -7,6 +7,7 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.nyt.simpleVoiceRadio.Bridges.CustomDiscs;
 import org.nyt.simpleVoiceRadio.Handlers.CommandHandler;
 import org.nyt.simpleVoiceRadio.Handlers.EventHandler;
 import org.nyt.simpleVoiceRadio.Handlers.PacketHandler;
@@ -67,8 +68,16 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         }
 
         getServer().getPluginManager().registerEvents(new EventHandler(this, dataManager, displayEntityManager, voiceAddon, item), this);
-    }
 
+        if (getServer().getPluginManager().getPlugin("CustomDiscs") != null) {
+            try {
+                getServer().getPluginManager().registerEvents(new CustomDiscs(this, dataManager, displayEntityManager, voiceAddon), this);
+                LOGGER.info("CustomDiscs found! Additional features included");
+            } catch (Exception e) {
+                LOGGER.error("CustomDiscs found but there is an error: " + e);
+            }
+        }
+    }
 
     @Override
     public void onDisable() {
