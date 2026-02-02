@@ -5,13 +5,11 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Jukebox;
+import org.mineskin.data.Skin;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
+import org.nyt.simpleVoiceRadio.Utils.SkinManager;
 
 public class PacketHandler {
     private final SimpleVoiceRadio plugin;
@@ -22,7 +20,7 @@ public class PacketHandler {
         this.protocolManager = plugin.getProtocolManager();
     }
 
-    public void registerActionBarListener() {
+    public void registerSoundListener() {
         protocolManager.addPacketListener(new PacketAdapter(plugin,
                 ListenerPriority.NORMAL,
                 PacketType.Play.Server.WORLD_EVENT) {

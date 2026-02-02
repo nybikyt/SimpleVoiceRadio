@@ -43,7 +43,7 @@ public class CustomDiscs implements Listener {
             if (channel == null) return;
 
             blockData.setState("listen");
-            displayEntityManager.setStateSkin(blockData.getTextures().get(3), blockData.getState());
+            displayEntityManager.setStateSkin(blockData.getTextures(), blockData.getState());
 
             if (voiceAddon != null) {
                 voiceAddon.startDiscBroadcast(aboveLocation, channel.getId());
@@ -65,7 +65,7 @@ public class CustomDiscs implements Listener {
             }
 
             blockData.setState("output");
-            displayEntityManager.setStateSkin(blockData.getTextures().get(3), blockData.getState());
+            displayEntityManager.setStateSkin(blockData.getTextures(), blockData.getState());
         });
     }
 }

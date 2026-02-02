@@ -16,13 +16,15 @@ import org.nyt.simpleVoiceRadio.Misc.Metrics;
 import org.nyt.simpleVoiceRadio.Utils.DataManager;
 import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
+import org.nyt.simpleVoiceRadio.Utils.SkinManager;
 import javax.annotation.Nullable;
 
 public final class SimpleVoiceRadio extends JavaPlugin {
 
     public static final Logger LOGGER = LogManager.getLogger(SimpleVoiceRadio.class.getSimpleName());
     private final DataManager dataManager = new DataManager(this);
-    private final DisplayEntityManager displayEntityManager = new DisplayEntityManager(this);
+    private final SkinManager skinManager = new SkinManager(this);
+    private final DisplayEntityManager displayEntityManager = new DisplayEntityManager(this, skinManager);
     private final JukeboxManager jukeboxManager = new JukeboxManager(this);
     private final Item item = new Item(this, displayEntityManager);
 
@@ -45,11 +47,13 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         new Metrics(this, 28921);
         LOGGER.info("bStats metrics initialized");
 
+        skinManager.prepare();
+
         dataManager.load();
         dataManager.startAutoSave();
 
         PacketHandler packetHandler = new PacketHandler(this);
-        packetHandler.registerActionBarListener();
+        packetHandler.registerSoundListener();
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             event.registrar().register(

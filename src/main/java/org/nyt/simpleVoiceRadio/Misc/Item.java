@@ -30,7 +30,7 @@ public class Item {
 
     public ItemStack getItem() {
         ItemStack item = new ItemStack(Material.PLAYER_HEAD);
-        displayEntityManager.getSkullByValue(plugin.getConfig().getString("radio.skull_skin", "ewogICJ0aW1lc3RhbXAiIDogMTc2ODczOTgxNzc0NiwKICAicHJvZmlsZUlkIiA6ICI2NmRmYzFmNTRlNTU0ZTZmODJjNTA5ZjM1NTJiYTkwZCIsCiAgInByb2ZpbGVOYW1lIiA6ICJadWFyaWciLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTM4ZmFhZWNlM2QyZmUyZTQzODRhODBhMDE3MGJhYzgyYjFmNTE0MDY2MmU2OTRjNjY2ZGQxZjcyMzNmZmI2ZSIKICAgIH0KICB9Cn0="), item);
+        displayEntityManager.setSkullByValue(plugin.getConfig().getString("radio.skull_skin", "ewogICJ0aW1lc3RhbXAiIDogMTc2ODczOTgxNzc0NiwKICAicHJvZmlsZUlkIiA6ICI2NmRmYzFmNTRlNTU0ZTZmODJjNTA5ZjM1NTJiYTkwZCIsCiAgInByb2ZpbGVOYW1lIiA6ICJadWFyaWciLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTM4ZmFhZWNlM2QyZmUyZTQzODRhODBhMDE3MGJhYzgyYjFmNTE0MDY2MmU2OTRjNjY2ZGQxZjcyMzNmZmI2ZSIKICAgIH0KICB9Cn0="), item);
         ItemMeta meta = item.getItemMeta();
 
         String displayName = plugin.getConfig().getString("radio.display-name", "Radio");

@@ -53,7 +53,7 @@ public class EventHandler implements Listener {
                 blockData.setState("output");
             }
         }
-        displayEntityManager.setStateSkin(blockData.getTextures().get(3), blockData.getState());
+        displayEntityManager.setStateSkin(blockData.getTextures(), blockData.getState());
     }
 
     private void breakRadio(Block block, DataManager.RadioData blockData, Boolean shouldModify, Boolean shouldDropItem) {
@@ -74,7 +74,6 @@ public class EventHandler implements Listener {
         }
 
         if (shouldModify) block.setType(Material.AIR);
-
         if (shouldDropItem) block.getWorld().dropItemNaturally(block.getLocation(), item.getItem());
     }
 

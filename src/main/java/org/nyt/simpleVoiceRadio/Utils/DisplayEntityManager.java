@@ -24,60 +24,67 @@ import java.util.UUID;
 
 public class DisplayEntityManager {
     private final SimpleVoiceRadio plugin;
+    private final SkinManager skinManager;
 
-    public DisplayEntityManager(SimpleVoiceRadio plugin) {
+    public DisplayEntityManager(SimpleVoiceRadio plugin, SkinManager skinManager) {
         this.plugin = plugin;
+        this.skinManager = skinManager;
     }
 
     public List<ItemDisplay> createItemDisplays(Location loc) {
-        ConfigurationSection textureSection = plugin.getConfig().getConfigurationSection("radio-block.texture_parts");
-        if (textureSection == null) return null;
+        List<?> defaultTexture = skinManager.getTextureConfig().getList("parsed_textures.output_state.list");
+        if (defaultTexture == null) return null;
 
         List<ItemDisplay> list = new ArrayList<>();
 
-        textureSection.getKeys(false).forEach(key -> {
-            ConfigurationSection partSection = textureSection.getConfigurationSection(key);
-            if (partSection == null) return;
+        int loopIndex = 0;
+        for (Object skin : defaultTexture) {
+            loopIndex++;
+            for (int count = 1; count <= 2; count++) {
 
-            ItemDisplay display = loc.getWorld().spawn(loc, ItemDisplay.class);
+                ItemDisplay display = loc.getWorld().spawn(loc, ItemDisplay.class);
+                ItemStack item = ItemStack.of(Material.PLAYER_HEAD);
+                setSkullByValue((String) skin, item);
 
-            ItemStack item = ItemStack.of(Material.PLAYER_HEAD);
-            String skullSkin = partSection.getString("skull_skin");
-            getSkullByValue(skullSkin, item);
+                display.setItemStack(item);
+                display.setViewRange((float) plugin.getConfig().getDouble("radio-block.view_range", 64));
 
-            display.setItemStack(item);
-            display.setViewRange(512);
+                int translationIndex = (count == 1) ? loopIndex : loopIndex + 4;
 
-            Vector3f translation = parseVector(
-                    partSection.getString("translation"),
-                    new Vector3f(0, 0, 0)
-            );
-            Vector3f scale = parseVector(
-                    partSection.getString("scale"),
-                    new Vector3f(1.001f, 1.001f, 1.001f)
-            );
+                Vector3f translation = parseVector(
+                        skinManager.getTextureConfig().getString("offset." + translationIndex),
+                        new Vector3f(0, 0, 0)
+                );
+                Vector3f scale = parseVector(
+                        skinManager.getTextureConfig().getString("offset.scale"),
+                        new Vector3f(1.001f, 1.001f, 1.001f)
+                );
 
-            updateTransformation(display, translation, null, scale, null);
-            list.add(display);
-        });
-
+                updateTransformation(display, translation, null, scale, null);
+                list.add(display);
+            }
+        }
         return list;
     }
 
-    public void setStateSkin(ItemDisplay display, String state) {
-        String displaySkullSkin;
-        if (state.equalsIgnoreCase("input")) {
-            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.part_4.input_state");
+    public void setStateSkin(List<ItemDisplay> displays, String state) {
+        List<?> textureList = skinManager.getTextureConfig().getList("parsed_textures." + state + "_state.list");
+        if (textureList == null || displays == null) return;
+
+        int displayIndex = 0;
+
+        for (Object skin : textureList) {
+            for (int count = 1; count <= 2; count++) {
+                if (displayIndex >= displays.size()) return;
+
+                ItemDisplay display = displays.get(displayIndex);
+                ItemStack item = ItemStack.of(Material.PLAYER_HEAD);
+                setSkullByValue((String) skin, item);
+                display.setItemStack(item);
+
+                displayIndex++;
+            }
         }
-        else if (state.equalsIgnoreCase("listen")) {
-            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.part_4.listen_state");
-        }
-        else {
-            displaySkullSkin = plugin.getConfig().getString("radio-block.texture_parts.part_4.skull_skin");
-        }
-        ItemStack displayItem = display.getItemStack();
-        getSkullByValue(displaySkullSkin, displayItem);
-        display.setItemStack(displayItem);
     }
 
 
@@ -98,7 +105,7 @@ public class DisplayEntityManager {
         return display;
     }
 
-    public void getSkullByValue(String base64, ItemStack item) {
+    public void setSkullByValue(String base64, ItemStack item) {
         if (base64 == null || base64.isEmpty()) {
             SimpleVoiceRadio.LOGGER.warn("Skull skin is null or empty");
             return;

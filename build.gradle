@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id("xyz.jpenilla.run-paper") version "2.3.1"
+    id("io.github.goooler.shadow") version "8.1.8"
 }
 
 group = 'org.nyt'
@@ -14,6 +15,7 @@ repositories {
     }
     maven { url = 'https://maven.maxhenkel.de/repository/public' }
     maven { url = 'https://repo.subkek.space/maven-public'}
+    maven { url 'https://repo.inventivetalent.org/repository/public/' }
 }
 
 dependencies {
@@ -21,6 +23,24 @@ dependencies {
     compileOnly "de.maxhenkel.voicechat:voicechat-api:2.6.0"
     compileOnly "space.subkek:customdiscs-api:1.0.0-SNAPSHOT"
     compileOnly "net.dmulloy2:ProtocolLib:5.4.0"
+
+    implementation "org.mineskin:java-client:3.2.1-SNAPSHOT"
+    implementation "org.mineskin:java-client-jsoup:3.2.1-SNAPSHOT"
+}
+
+shadowJar {
+    archiveClassifier.set('')
+
+    relocate 'org.mineskin', 'org.nyt.simpleVoiceRadio.libs.mineskin'
+    relocate 'org.jsoup', 'org.nyt.simpleVoiceRadio.libs.jsoup'
+
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+}
+
+build {
+    dependsOn shadowJar
 }
 
 tasks {
@@ -57,8 +77,8 @@ processResources {
 }
 
 tasks.register('copyJarToServer', Copy) {
-    dependsOn jar
-    from jar.archiveFile
+    dependsOn shadowJar
+    from shadowJar.archiveFile
     into 'C:/Users/Daniil/Desktop/server/plugins'
 }
 

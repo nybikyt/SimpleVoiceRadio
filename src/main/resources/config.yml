@@ -21,7 +21,7 @@ radio:
     # Crafting recipe in 3x3 grid format
     # Each line represents a row (top, middle, bottom)
     # Use comma-separated Minecraft material names
-    # Use 'air' or leave empty for no item in that slot
+    # Use "air" for no item in that slot
     recipe:
       - copper_ingot,chiseled_copper,copper_ingot
       - iron_ingot,jukebox,iron_ingot
@@ -31,6 +31,11 @@ radio-block:
   # How far (in blocks) the radio searches for nearby input radios
   # When a player speaks, the plugin looks for input radios within this radius
   input_search_radius: 15
+
+  # Maximum distance (in blocks) at which radio blocks are visible to players
+  # Radio blocks beyond this distance won't render for players
+  # Higher values may cause FPS drops for players with many radios nearby
+  view_range: 128
 
   # Maximum frequency number that can be set on radios
   # Players can set frequencies from 1 to this number
@@ -48,49 +53,8 @@ radio-block:
   # If false, players can manually change frequencies by shift-clicking
   redstone_frequency: false
 
-  # Visual appearance of the radio block (8 parts total)
-  # Each part is a player head positioned to create the 3D radio model
-  texture_parts:
-    part_1:
-      scale: 1.001,1.001,1.001
-      translation: 0.25,-0.4999,-0.25
-      skull_skin: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU3NjA5NDc1MiwKICAicHJvZmlsZUlkIiA6ICIwNDg2YWUwMWI4Y2I0OWUzODMyZDcwOTNmMWJlNzI3NyIsCiAgInByb2ZpbGVOYW1lIiA6ICJfcGFrbWFuXyIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS83Yjc1Y2Y1MDg0N2JjNjRhMDIwZDZkZGVkOGFjYzU4Mzk4MzU3NzJiYWJlMTRlYzllY2Y5NjY5Y2VkYjk1M2U5IgogICAgfQogIH0KfQ=="
-
-    part_2:
-      scale: 1.001,1.001,1.001
-      translation: -0.25,-0.4999,-0.25
-      skull_skin: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU3NjA5Njc1MywKICAicHJvZmlsZUlkIiA6ICIzZGE2ZDgxOTI5MTY0MTNlODhlNzg2MjQ3NzA4YjkzZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJGZXJTdGlsZSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS84ZjdhZTk0MDk0OTM1OTEyMGJmOGQ2ZjU0MzdkMWQ4Y2E4NTM4OGQwOTY4MDU5NDI2ODhiMzA0NTY4YzEyMDM1IgogICAgfQogIH0KfQ=="
-
-    part_3:
-      scale: 1.001,1.001,1.001
-      translation: 0.25,-1,-0.25
-      skull_skin: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU4Mzc2MjcyMiwKICAicHJvZmlsZUlkIiA6ICIxOTc0ZWI5YzU5NjY0MTc3OTMxNzQ1ZDFmMmIwYTUyNCIsCiAgInByb2ZpbGVOYW1lIiA6ICJhY3Rpb24zNiIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS84Y2Q0MzRlYWI5YmNmN2I5ZmQ5OGEyZTQ2MzU2NzlkMGE3ZTI4ODA5ZWFkYmRiZTY5MTg4ZTJkZWQxMWFjYmY1IgogICAgfQogIH0KfQ=="
-
-    part_4:
-      scale: 1.001,1.001,1.001
-      translation: -0.25,-1,-0.25
-      skull_skin: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU4Mzc2NTc0NiwKICAicHJvZmlsZUlkIiA6ICI0YWU5MTM5MzZhOGU0MWU0YWNlMTYyYjI4YmM0MzMwMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJ6ZXJ2YXRpb24iLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZjAxMTI4NjRlMTBiMGU4MTg1ZmQyYWU3MWJkNThkYTM1ODg2ZjFkMjA5MTM2ZDdjMmJiNDJjZjY3NTA5NTQzOCIKICAgIH0KICB9Cn0="
-
-      input_state: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU4NDYyMDMxMiwKICAicHJvZmlsZUlkIiA6ICIxN2I5ZDBmOWYxYzE0OTE5ODRkY2Y5ZGM2YzczZDYzYyIsCiAgInByb2ZpbGVOYW1lIiA6ICJuYWJlNDk3NSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS9mZWE5ZWQ0NDkwMzUwNGQ2ODA1MTY2NGJjNTEzMjA5NDEwZWE5NWVmZTc3MWI1NDZjMTQwY2M3Y2UxNGU2YmMyIgogICAgfQogIH0KfQ=="
-
-      listen_state: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU4NTIwNTAyMywKICAicHJvZmlsZUlkIiA6ICI0MDU4NDhjMmJjNTE0ZDhkOThkOTJkMGIwYzhiZDQ0YiIsCiAgInByb2ZpbGVOYW1lIiA6ICJMaWFtX1NhZ2UiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZmMyYTMwYTdjZmQ0OTEyNjg3OGU1ZGY1ODY4MzZjMWFjNzRmOGI3ODQ4YzUzNGZlYTYzMWU1ODk3ODQ4ODVmYiIKICAgIH0KICB9Cn0="
-
-    part_5:
-      scale: 1.001,1.001,1.001
-      translation: -0.25,-0.4999,0.25
-      skull_skin: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU3NjEwMzc4OCwKICAicHJvZmlsZUlkIiA6ICIzNmU5MTE1YzBjYzc0ZjhkOTdmOGFjNjA1ZGMxNGVkYSIsCiAgInByb2ZpbGVOYW1lIiA6ICJEYXJnaVYiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvM2U0NWQ3YmM2M2VkMTEwZTkxYWI4ZmQxYzFiNTcyMmQ4NTk5M2U3YzY3YTYwYzU5NWY5ZGM0OTUyY2ZmYjQ3ZiIKICAgIH0KICB9Cn0="
-
-    part_6:
-      scale: 1.001,1.001,1.001
-      translation: 0.25,-0.4999,0.25
-      skull_skin: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU3NjEwNTg4OCwKICAicHJvZmlsZUlkIiA6ICJhYTUwNjRmMDUzOWQ0YmFhYTVkOGMzODllY2JiNGFlMSIsCiAgInByb2ZpbGVOYW1lIiA6ICJ4WF9FbXBsb3ltZW50X1h4IiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzJkMTlkN2NkNGIxZTczZjQwNTQ1OTZhYmRkMDgzNGIxMjMzYWZiOTc2ZjQ0N2UzNjc5YWMxZWZhMWM0N2U3NDEiCiAgICB9CiAgfQp9"
-
-    part_7:
-      scale: 1.001,1.001,1.001
-      translation: -0.25,-1,0.25
-      skull_skin: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU4Mzc2OTIwNiwKICAicHJvZmlsZUlkIiA6ICI2OTU3YjQyOTZiOTI0NGJkOGQzNWJiZGU4M2JiZDI3OSIsCiAgInByb2ZpbGVOYW1lIiA6ICJjb2xpblBBUEEiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTBkYjcwYjk3NzM0MWMzN2YxMDFkZWVlZDNlNzM0MjgxMjI4ZmM2NjhjZjA4NmJhZmI5NmNkMmVjMDgxZGQzNSIKICAgIH0KICB9Cn0="
-
-    part_8:
-      scale: 1.001,1.001,1.001
-      translation: 0.25,-1,0.25
-      skull_skin: "ewogICJ0aW1lc3RhbXAiIDogMTc2ODU4Mzc3MTQyOSwKICAicHJvZmlsZUlkIiA6ICI3ZjU3MzM2M2M1YTM0N2JiOGQwYzJjNDYyOTVmN2JlYyIsCiAgInByb2ZpbGVOYW1lIiA6ICJNb25leWVoIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NkYjE3OGJlZGY0ZmM1MmVlNzZlYjgyY2Q1MjFjZjAyYmNjZTcxNWIzNzhiZjFjNGU2YjcwNzlhOGRmOTBlNzIiCiAgICB9CiAgfQp9"
+skin:
+  # MineSkin API key for uploading custom radio block textures
+  # Get your free API key at: https://account.mineskin.org/keys/
+  # If left empty or invalid, the plugin will use default textures
+  api_key: TOKEN_TOKEN_TOKEN
