@@ -3,16 +3,22 @@ package org.nyt.simpleVoiceRadio;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import de.maxhenkel.voicechat.api.events.*;
+import de.maxhenkel.voicechat.api.VolumeCategory;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.nyt.simpleVoiceRadio.Utils.DataManager;
 import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class VoiceAddon implements VoicechatPlugin {
+    public static final String RADIO_CATEGORY = "sv_radio";
     public static VoicechatServerApi api = null;
     private final DataManager dataManager;
     private final SimpleVoiceRadio plugin;
@@ -40,12 +46,44 @@ public class VoiceAddon implements VoicechatPlugin {
     public void registerEvents(EventRegistration eventRegistration) {
         eventRegistration.registerEvent(VoicechatServerStartedEvent.class, this::onServerStart);
         eventRegistration.registerEvent(MicrophonePacketEvent.class, this::onMicrophone);
-        if (plugin.getConfig().getBoolean("radio-block.custom_discs_integration", false)) eventRegistration.registerEvent(LocationalSoundPacketEvent.class, this::onLocationalPacket);
+        if (plugin.getConfig().getBoolean("radio-block.custom_discs_integration", false)) {
+            eventRegistration.registerEvent(LocationalSoundPacketEvent.class, this::onLocationalPacket);
+        }
     }
 
     private void onServerStart(VoicechatServerStartedEvent event) {
         api = event.getVoicechat();
         createOutputChannels();
+        VolumeCategory radioCategory = api.volumeCategoryBuilder()
+                .setId(RADIO_CATEGORY)
+                .setName("Radio")
+                .setDescription("The volume of all radio-blocks")
+                .setIcon(loadIcon("assets/logo.png"))
+                .build();
+        api.registerVolumeCategory(radioCategory);
+    }
+
+    private int[][] loadIcon(String path) {
+        try (InputStream stream = SimpleVoiceRadio.class.getClassLoader().getResourceAsStream(path)) {
+            if (stream == null) return null;
+
+            BufferedImage image = ImageIO.read(stream);
+            if (image == null || image.getWidth() != 16 || image.getHeight() != 16) {
+                return null;
+            }
+
+            int[][] pixels = new int[16][16];
+            for (int x = 0; x < 16; x++) {
+                for (int y = 0; y < 16; y++) {
+                    pixels[x][y] = image.getRGB(x, y);
+                }
+            }
+            return pixels;
+
+        } catch (IOException e) {
+            SimpleVoiceRadio.LOGGER.error("Failed to load icon: {}", path, e);
+            return null;
+        }
     }
 
     public LocationalAudioChannel createChannel(Location location) {
@@ -60,6 +98,7 @@ public class VoiceAddon implements VoicechatPlugin {
 
         float radius = (float) plugin.getConfig().getDouble("radio-block.output_radius", 16);
         channel.setDistance(radius);
+        channel.setCategory(RADIO_CATEGORY);
         outputChannels.put(location, channel);
 
         return channel;

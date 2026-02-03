@@ -54,7 +54,7 @@ radio-block:
   # If false, radios will still transmit audio but without redstone signal output
   signal_output_system: true
 
-  # If true, enables integration with CustomDiscsSVC plugin
+  # If true, enables integration with CustomDiscsSVC plugin (BETA!!!, may be unstable)
   # When enabled, music discs played in jukeboxes below radio blocks will be broadcast
   # When disabled, the CustomDiscs bridge functionality is completely turned off
   custom_discs_integration: false
