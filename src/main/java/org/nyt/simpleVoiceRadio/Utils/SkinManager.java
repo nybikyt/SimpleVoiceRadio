@@ -4,7 +4,6 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.nyt.simpleVoiceRadio.Bridges.MineSkin;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -21,12 +20,14 @@ public class SkinManager {
     private final SimpleVoiceRadio plugin;
     private YamlConfiguration textureConfig;
     private final MineSkin api;
-    private final List<String> assets = List.of(
+    private final List<String> stateAssets = List.of(
             "assets/broadcast_state.png",
             "assets/input_state.png",
             "assets/listen_state.png",
             "assets/output_state.png"
     );
+    private final String textureConfigPath = "texture.yml";
+    private final String itemAssetPath = "assets/item.png";
 
     public YamlConfiguration getTextureConfig() {
         return textureConfig;
@@ -35,33 +36,39 @@ public class SkinManager {
     public SkinManager(SimpleVoiceRadio plugin) {
         this.plugin = plugin;
         this.api = new MineSkin(plugin);
+        saveAssets();
     }
 
+    public void reloadConfig() {
+        File file = new File(plugin.getDataFolder(), textureConfigPath);
+        textureConfig = YamlConfiguration.loadConfiguration(file);
+    }
 
-    public void prepare() {
-        File textureConfigFile = new File(plugin.getDataFolder(), "texture.yml");
-        if (!textureConfigFile.exists()) {
-            plugin.saveResource("texture.yml", false);
+    public void saveConfig() {
+        try {
+            File file = new File(plugin.getDataFolder(), textureConfigPath);
+            textureConfig.save(file);
+        } catch (Exception e) {
+            SimpleVoiceRadio.LOGGER.error("Failed to save texture config", e);
         }
-
-        textureConfig = YamlConfiguration.loadConfiguration(textureConfigFile);
-
-        saveAssets();
-
-        api.validateApiKey().thenAccept(isValid -> {
-            if (isValid) {
-                setup();
-            }
-        });
     }
 
     private void saveAssets() {
-        assets.forEach(assetPath -> {
-            File file = new File(plugin.getDataFolder(), assetPath);
-            if (!file.exists()) {
-                plugin.saveResource(assetPath, false);
-            }
-        });
+        File textureConfigFile = new File(plugin.getDataFolder(), textureConfigPath);
+        if (!textureConfigFile.exists()) {
+            plugin.saveResource(textureConfigPath, false);
+        }
+        textureConfig = YamlConfiguration.loadConfiguration(textureConfigFile);
+
+        saveResourceIfMissing(itemAssetPath);
+        stateAssets.forEach(this::saveResourceIfMissing);
+    }
+
+    private void saveResourceIfMissing(String path) {
+        File file = new File(plugin.getDataFolder(), path);
+        if (!file.exists()) {
+            plugin.saveResource(path, false);
+        }
     }
 
     private String calculateFileHash(File file) throws Exception {
@@ -75,47 +82,79 @@ public class SkinManager {
     }
 
     public void setup() {
-        assets.forEach(assetPath -> {
+        api.validateApiKey().thenAccept(isValid -> {
+            if (isValid) {
+                processItemTexture();
+                processStateTextures();
+            }
+        });
+    }
+
+    private void processItemTexture() {
+        File itemFile = new File(plugin.getDataFolder(), itemAssetPath);
+        if (!itemFile.exists()) return;
+
+        try {
+            String hash = calculateFileHash(itemFile);
+            String savedHash = textureConfig.getString("parsed_textures.item.hash");
+
+            if (hash.equals(savedHash)) return;
+
+            SimpleVoiceRadio.LOGGER.info("Parsing texture: item");
+            BufferedImage image = ImageIO.read(itemFile);
+
+            transferTextureToHead("item", "item", image).thenAccept(value -> {
+                if (value != null) {
+                    textureConfig.set("parsed_textures.item.value", value);
+                    textureConfig.set("parsed_textures.item.hash", hash);
+                    saveConfig();
+                    SimpleVoiceRadio.LOGGER.info("Done parsing texture: item");
+                } else {
+                    SimpleVoiceRadio.LOGGER.warn("Failed to parse texture: item");
+                }
+            });
+        } catch (Exception e) {
+            SimpleVoiceRadio.LOGGER.error("Failed to process texture: item", e);
+        }
+    }
+
+    private void processStateTextures() {
+        stateAssets.forEach(assetPath -> {
             File file = new File(plugin.getDataFolder(), assetPath);
+            if (!file.exists()) return;
 
             try {
                 String baseName = assetPath.substring(assetPath.lastIndexOf("/") + 1, assetPath.lastIndexOf("."));
-                String currentHash = calculateFileHash(file);
+                String hash = calculateFileHash(file);
                 String savedHash = textureConfig.getString("parsed_textures." + baseName + ".hash");
 
-                if (savedHash == null || !savedHash.equals(currentHash)) {
-                    SimpleVoiceRadio.LOGGER.info("Parsing texture: {}", baseName);
+                if (hash.equals(savedHash)) return;
 
-                    BufferedImage image = ImageIO.read(file);
+                SimpleVoiceRadio.LOGGER.info("Parsing texture: {}", baseName);
+                BufferedImage image = ImageIO.read(file);
+
+                parseBlockTextures(baseName, image).thenAccept(textureList -> {
                     ConfigurationSection blockSection = textureConfig.getConfigurationSection("block");
-                    int expectedBlockCount = blockSection != null ? blockSection.getKeys(false).size() : 0;
+                    int expectedCount = blockSection != null ? blockSection.getKeys(false).size() : 0;
 
-                    parseTextures(baseName, image).thenAccept(textureList -> {
-                        if (textureList.size() == expectedBlockCount) {
-                            textureConfig.set("parsed_textures." + baseName + ".list", textureList);
-                            textureConfig.set("parsed_textures." + baseName + ".hash", currentHash);
-
-                            try {
-                                textureConfig.save(new File(plugin.getDataFolder(), "texture.yml"));
-                                SimpleVoiceRadio.LOGGER.info("Done parsing texture: {}", baseName);
-                            } catch (Exception e) {
-                                SimpleVoiceRadio.LOGGER.error("Failed to save texture config", e);
-                            }
-                        } else {
-                            SimpleVoiceRadio.LOGGER.warn("Skipped saving texture {}: {}/{} parts parsed successfully. Keeping default values.",
-                                    baseName, textureList.size(), expectedBlockCount);
-                        }
-                    });
-                }
+                    if (textureList.size() == expectedCount) {
+                        textureConfig.set("parsed_textures." + baseName + ".list", textureList);
+                        textureConfig.set("parsed_textures." + baseName + ".hash", hash);
+                        saveConfig();
+                        SimpleVoiceRadio.LOGGER.info("Done parsing texture: {}", baseName);
+                    } else {
+                        SimpleVoiceRadio.LOGGER.warn("Failed parsing texture {}: {}/{} parts",
+                                baseName, textureList.size(), expectedCount);
+                    }
+                });
             } catch (Exception e) {
                 SimpleVoiceRadio.LOGGER.error("Failed to process texture: {}", assetPath, e);
             }
         });
     }
 
-    public CompletableFuture<List<String>> parseTextures(String baseName, BufferedImage sourceImage) {
+    private CompletableFuture<List<String>> parseBlockTextures(String baseName, BufferedImage sourceImage) {
         ConfigurationSection blockSection = textureConfig.getConfigurationSection("block");
-
         if (blockSection == null) {
             return CompletableFuture.completedFuture(new ArrayList<>());
         }
@@ -133,34 +172,34 @@ public class SkinManager {
                 );
     }
 
-    public CompletableFuture<String> transferTextureToHead(String name, String dataPath, BufferedImage image) {
+    private CompletableFuture<String> transferTextureToHead(String name, String dataPath, BufferedImage image) {
         BufferedImage headTexture = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics = headTexture.createGraphics();
 
         try {
             ConfigurationSection data = textureConfig.getConfigurationSection(dataPath);
-
             if (data == null) {
-                return CompletableFuture.failedFuture(new IllegalArgumentException("Data section not found: " + dataPath));
+                return CompletableFuture.failedFuture(
+                        new IllegalArgumentException("Data section not found: " + dataPath)
+                );
             }
 
             for (String key : data.getKeys(false)) {
-                ConfigurationSection value = data.getConfigurationSection(key);
-                ConfigurationSection headData = textureConfig.getConfigurationSection("head." + key);
+                ConfigurationSection sourceSection = data.getConfigurationSection(key);
+                ConfigurationSection headSection = textureConfig.getConfigurationSection("head." + key);
 
-                if (value != null && headData != null) {
-                    int x = value.getInt("x");
-                    int y = value.getInt("y");
-                    int headX = headData.getInt("x");
-                    int headY = headData.getInt("y");
+                if (sourceSection != null && headSection != null) {
+                    int srcX = sourceSection.getInt("x");
+                    int srcY = sourceSection.getInt("y");
+                    int dstX = headSection.getInt("x");
+                    int dstY = headSection.getInt("y");
 
-                    BufferedImage subImage = image.getSubimage(x, y, 8, 8);
-                    graphics.drawImage(subImage, headX, headY, null);
+                    BufferedImage subImage = image.getSubimage(srcX, srcY, 8, 8);
+                    graphics.drawImage(subImage, dstX, dstY, null);
                 }
             }
 
             return api.uploadSkin(headTexture, name);
-
         } finally {
             graphics.dispose();
         }

@@ -119,10 +119,39 @@ block:
       x: 0
       y: 32
 
+item:
+  north:
+    x: 0
+    y: 0
+  south:
+    x: 8
+    y: 0
+  east:
+    x: 0
+    y: 8
+  west:
+    x: 8
+    y: 8
+  up:
+    x: 0
+    y: 16
+  down:
+    x: 16
+    y: 0
+
+frequency_display:
+  offset: 0.0185,-1.01,-0.501
+  scale: 1.5,1.435,0
+  color: '#AA0000'
+  number_format: '%d'
 
 # AUTO-GENERATED - DO NOT EDIT!
 # Plugin automatically updates this when textures change
 parsed_textures:
+  item:
+    value: ewogICJ0aW1lc3RhbXAiIDogMTc3MDEwMjc3ODM1NywKICAicHJvZmlsZUlkIiA6ICIxMzEzZGFmMDc2OGQ0YmQ5Yjc1ODJkMGI1NWUwZGQxNiIsCiAgInByb2ZpbGVOYW1lIiA6ICJMZW50aWNjaGllIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzZkMjY2MmM5MGNlYzA1Y2Q5MDE5MmVjMDBkMTU5ZmZkNzBiNWMwOWUzOTFmOTM5NzI0ZmUwNTJmZGYzNzA1ZmUiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==
+    hash: 7f7504524d98abfb8400b864f2b83969
+
   input_state:
     list:
       - ewogICJ0aW1lc3RhbXAiIDogMTc3MDAxNjk3ODI1MSwKICAicHJvZmlsZUlkIiA6ICJkODBlMGYyNjU2M2U0NzI3YWNiZDNlMmRlNDkxYzFiZSIsCiAgInByb2ZpbGVOYW1lIiA6ICJMZXZfSXMiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGJiYzA2ZTI3NzdmYmYzYzNkNGQ4MzhhODU4MmU0MWU3OTlkNWNiYTYyNjJkMDY1MDg0YTAxZDQ1NTUxOTc1MCIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9

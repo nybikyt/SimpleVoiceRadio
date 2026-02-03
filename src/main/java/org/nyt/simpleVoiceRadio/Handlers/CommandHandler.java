@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 import org.nyt.simpleVoiceRadio.Misc.Item;
 import org.nyt.simpleVoiceRadio.Misc.RecipeHolder;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
+import org.nyt.simpleVoiceRadio.Utils.SkinManager;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class CommandHandler implements BasicCommand {
     private final SimpleVoiceRadio plugin;
     private final Item item;
+    private final SkinManager skinManager;
     private final static Map<String, String> arguments = Map.ofEntries(
             Map.entry("reload", "simple_voice_radio.reload_config"),
             Map.entry("give", "simple_voice_radio.give"),
@@ -31,9 +34,10 @@ public class CommandHandler implements BasicCommand {
     private final Component noPermission = Component.text("You don't have permission to use this command!", TextColor.color(214, 54, 67));
     private final Component playerOnly = Component.text("Only players can use this command!", TextColor.color(214, 54, 67));
 
-    public CommandHandler(SimpleVoiceRadio plugin, Item item) {
+    public CommandHandler(SimpleVoiceRadio plugin, Item item, SkinManager skinManager) {
         this.plugin = plugin;
         this.item = item;
+        this.skinManager = skinManager;
     }
 
     @Override
@@ -59,6 +63,7 @@ public class CommandHandler implements BasicCommand {
                     case "reload" -> {
                         try {
                             plugin.reloadConfig();
+                            skinManager.reloadConfig();
                             item.reloadCraft();
                             sender.sendMessage(Component.text("Config has been reloaded!", TextColor.color(245, 203, 78)));
                         } catch (Exception e) {

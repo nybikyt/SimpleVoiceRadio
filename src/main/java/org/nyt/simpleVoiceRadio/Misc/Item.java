@@ -13,24 +13,25 @@ import org.bukkit.persistence.PersistentDataType;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import org.nyt.simpleVoiceRadio.Utils.MiniMessageSerializer;
-
+import org.nyt.simpleVoiceRadio.Utils.SkinManager;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 public class Item {
     private final SimpleVoiceRadio plugin;
     private final DisplayEntityManager displayEntityManager;
+    private final SkinManager skinManager;
 
-    public Item(SimpleVoiceRadio plugin, DisplayEntityManager displayEntityManager) {
+    public Item(SimpleVoiceRadio plugin, DisplayEntityManager displayEntityManager, SkinManager skinManager) {
         this.plugin = plugin;
         this.displayEntityManager = displayEntityManager;
+        this.skinManager = skinManager;
     }
 
     public ItemStack getItem() {
         ItemStack item = new ItemStack(Material.PLAYER_HEAD);
-        displayEntityManager.setSkullByValue(plugin.getConfig().getString("radio.skull_skin", "ewogICJ0aW1lc3RhbXAiIDogMTc2ODczOTgxNzc0NiwKICAicHJvZmlsZUlkIiA6ICI2NmRmYzFmNTRlNTU0ZTZmODJjNTA5ZjM1NTJiYTkwZCIsCiAgInByb2ZpbGVOYW1lIiA6ICJadWFyaWciLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTM4ZmFhZWNlM2QyZmUyZTQzODRhODBhMDE3MGJhYzgyYjFmNTE0MDY2MmU2OTRjNjY2ZGQxZjcyMzNmZmI2ZSIKICAgIH0KICB9Cn0="), item);
+        displayEntityManager.setSkullByValue(skinManager.getTextureConfig().getString("parsed_textures.item.value"), item);
         ItemMeta meta = item.getItemMeta();
 
         String displayName = plugin.getConfig().getString("radio.display-name", "Radio");

@@ -2,6 +2,7 @@ package org.nyt.simpleVoiceRadio.Handlers;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Jukebox;
@@ -24,6 +25,7 @@ import org.nyt.simpleVoiceRadio.Misc.RecipeHolder;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 import org.nyt.simpleVoiceRadio.Utils.DataManager;
 import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import org.nyt.simpleVoiceRadio.Utils.SkinManager;
 import org.nyt.simpleVoiceRadio.VoiceAddon;
 import java.util.List;
 
@@ -33,20 +35,28 @@ public class EventHandler implements Listener {
     private final DataManager dataManager;
     private final DisplayEntityManager displayEntityManager;
     private final VoiceAddon addon;
+    private final SkinManager skinManager;
     private final Item item;
 
-    public EventHandler(SimpleVoiceRadio plugin, DataManager dataManager, DisplayEntityManager displayEntityManager, VoiceAddon addon, Item item) {
+    public EventHandler(SimpleVoiceRadio plugin, DataManager dataManager, DisplayEntityManager displayEntityManager, VoiceAddon addon, SkinManager skinManager, Item item) {
         this.plugin = plugin;
         this.dataManager = dataManager;
         this.displayEntityManager = displayEntityManager;
         this.addon = addon;
+        this.skinManager = skinManager;
         this.item = item;
     }
 
     private void updateRadioData(DataManager.RadioData blockData, int power) {
         blockData.setFrequency(power);
         if (power > 0) {
-            blockData.getFrequencyDisplay().text(Component.text(String.valueOf(blockData.getFrequency()), NamedTextColor.DARK_RED));
+            blockData.getFrequencyDisplay()
+                    .text(
+                            Component.text(
+                                    String.format(skinManager.getTextureConfig().getString("frequency_display.number_format", "%d"),
+                                    blockData.getFrequency()),
+                                    TextColor.fromHexString(skinManager.getTextureConfig().getString("frequency_display.color", "#AA0000")))
+                    );
         } else {
             blockData.getFrequencyDisplay().text(Component.empty());
             if (plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) {

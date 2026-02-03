@@ -26,7 +26,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
     private final SkinManager skinManager = new SkinManager(this);
     private final DisplayEntityManager displayEntityManager = new DisplayEntityManager(this, skinManager);
     private final JukeboxManager jukeboxManager = new JukeboxManager(this);
-    private final Item item = new Item(this, displayEntityManager);
+    private final Item item = new Item(this, displayEntityManager, skinManager);
 
     public ProtocolManager getProtocolManager() { return protocolManager; }
     private ProtocolManager protocolManager;
@@ -42,12 +42,12 @@ public final class SimpleVoiceRadio extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        item.registerCraft();
 
         new Metrics(this, 28921);
         LOGGER.info("bStats metrics initialized");
 
-        skinManager.prepare();
+        skinManager.setup();
+        item.registerCraft();
 
         dataManager.load();
         dataManager.startAutoSave();
@@ -59,7 +59,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
             event.registrar().register(
                     "simple_voice_radio",
                     "SimpleVoiceRadio command",
-                    new CommandHandler(this, item)
+                    new CommandHandler(this, item, skinManager)
             );
         });
 
@@ -71,7 +71,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
             LOGGER.error("Error while loading addon! Bye :(");
         }
 
-        getServer().getPluginManager().registerEvents(new EventHandler(this, dataManager, displayEntityManager, voiceAddon, item), this);
+        getServer().getPluginManager().registerEvents(new EventHandler(this, dataManager, displayEntityManager, voiceAddon, skinManager, item), this);
 
         if (getServer().getPluginManager().getPlugin("CustomDiscs") != null) {
             try {

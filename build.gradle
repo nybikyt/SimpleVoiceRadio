@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly "io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT"
+    compileOnly "io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT"
     compileOnly "de.maxhenkel.voicechat:voicechat-api:2.6.0"
     compileOnly "space.subkek:customdiscs-api:1.0.0-SNAPSHOT"
     compileOnly "net.dmulloy2:ProtocolLib:5.4.0"

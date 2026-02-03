@@ -4,11 +4,11 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.TextDisplay;
@@ -91,13 +91,31 @@ public class DisplayEntityManager {
     public TextDisplay createTextDisplay(Location loc, int frequency) {
         TextDisplay display = loc.getWorld().spawn(loc, TextDisplay.class);
 
-        display.text(Component.text(String.valueOf(frequency), NamedTextColor.DARK_RED));
+        display.text(
+                Component.text(
+                        String.format(skinManager.getTextureConfig().getString(
+                                "frequency_display.number_format", "%d"),
+                                frequency
+                        ),
+                        TextColor.fromHexString(skinManager.getTextureConfig().getString(
+                                "frequency_display.color", "#AA0000")
+                        )
+                )
+        );
         display.setBackgroundColor(Color.fromARGB(0,0,0,0));
-        display.setViewRange(512);
+        display.setViewRange((float) plugin.getConfig().getDouble("radio-block.view_range", 64));
 
         display.setBrightness(new Display.Brightness(15,15));
-        Vector3f scale = new Vector3f(1.5f,1.435f,0);
-        Vector3f translation = new Vector3f(0.0185f,-1.01f,-0.501f);
+
+        Vector3f scale = parseVector(
+                skinManager.getTextureConfig().getString("frequency_display.scale"),
+                new Vector3f(0, 0, 0)
+        );
+
+        Vector3f translation = parseVector(
+                skinManager.getTextureConfig().getString("frequency_display.offset"),
+                new Vector3f(0, 0, 0)
+        );
 
         Quaternionf leftRot = new Quaternionf().rotateY((float) Math.toRadians(180));
         updateTransformation(display, translation, leftRot, scale, null);
