@@ -97,7 +97,9 @@ public class VoiceAddon implements VoicechatPlugin {
         activeDiscBroadcasts.remove(radioLocation);
 
         if (!discActiveOutputs.isEmpty()) {
-            discActiveOutputs.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+            if (plugin.getConfig().getBoolean("radio-block.signal_output_system", true)) {
+                discActiveOutputs.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+            }
             discActiveOutputs.clear();
         }
     }
@@ -161,10 +163,12 @@ public class VoiceAddon implements VoicechatPlugin {
                 .filter(loc -> !newDiscActiveOutputs.contains(loc))
                 .collect(Collectors.toSet());
 
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            locationsToActivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 15));
-            locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
-        });
+        if (plugin.getConfig().getBoolean("radio-block.signal_output_system", true)) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                locationsToActivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 15));
+                locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+            });
+        }
 
         discActiveOutputs.clear();
         discActiveOutputs.addAll(newDiscActiveOutputs);
@@ -202,9 +206,11 @@ public class VoiceAddon implements VoicechatPlugin {
         if (audioData == null || audioData.length == 0 || nearbyInputRadios.isEmpty()) {
             if (!activeOutputs.isEmpty()) {
                 Set<Location> locationsToDeactivate = new HashSet<>(activeOutputs);
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
-                });
+                if (plugin.getConfig().getBoolean("radio-block.signal_output_system", true)) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+                    });
+                }
                 activeOutputs.clear();
             }
             return;
@@ -218,9 +224,11 @@ public class VoiceAddon implements VoicechatPlugin {
         if (frequencies.isEmpty()) {
             if (!activeOutputs.isEmpty()) {
                 Set<Location> locationsToDeactivate = new HashSet<>(activeOutputs);
-                Bukkit.getScheduler().runTask(plugin, () -> {
-                    locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
-                });
+                if (plugin.getConfig().getBoolean("radio-block.signal_output_system", true)) {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+                    });
+                }
                 activeOutputs.clear();
             }
             return;
@@ -274,8 +282,10 @@ public class VoiceAddon implements VoicechatPlugin {
                 .collect(Collectors.toSet());
 
         Bukkit.getScheduler().runTask(plugin, () -> {
-            signalLevels.forEach(jukeboxManager::updateJukeboxDisc);
-            locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+            if (plugin.getConfig().getBoolean("radio-block.signal_output_system", true)) {
+                signalLevels.forEach(jukeboxManager::updateJukeboxDisc);
+                locationsToDeactivate.forEach(loc -> jukeboxManager.updateJukeboxDisc(loc, 0));
+            }
         });
 
         activeOutputs.clear();
