@@ -40,7 +40,7 @@ public class VoiceAddon implements VoicechatPlugin {
     public void registerEvents(EventRegistration eventRegistration) {
         eventRegistration.registerEvent(VoicechatServerStartedEvent.class, this::onServerStart);
         eventRegistration.registerEvent(MicrophonePacketEvent.class, this::onMicrophone);
-        eventRegistration.registerEvent(LocationalSoundPacketEvent.class, this::onLocationalPacket);
+        if (plugin.getConfig().getBoolean("radio-block.custom_discs_integration", false)) eventRegistration.registerEvent(LocationalSoundPacketEvent.class, this::onLocationalPacket);
     }
 
     private void onServerStart(VoicechatServerStartedEvent event) {

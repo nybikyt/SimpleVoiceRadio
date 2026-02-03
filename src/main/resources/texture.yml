@@ -1,6 +1,7 @@
-# =============================== #
-# SimpleVoiceRadio Texture Config #
-# =============================== #
+# ======================================================= #
+#             SimpleVoiceRadio Texture Config             #
+#   Help/Support - https://discord.com/invite/WESPMeKUDe  #
+# ======================================================= #
 
 # WARNING: DO NOT MODIFY THIS FILE UNLESS YOU KNOW WHAT YOU'RE DOING!
 # This file controls how radio block textures are mapped from PNG files to Minecraft player heads.
@@ -149,8 +150,8 @@ frequency_display:
 # Plugin automatically updates this when textures change
 parsed_textures:
   item:
-    value: ewogICJ0aW1lc3RhbXAiIDogMTc3MDEwMjc3ODM1NywKICAicHJvZmlsZUlkIiA6ICIxMzEzZGFmMDc2OGQ0YmQ5Yjc1ODJkMGI1NWUwZGQxNiIsCiAgInByb2ZpbGVOYW1lIiA6ICJMZW50aWNjaGllIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzZkMjY2MmM5MGNlYzA1Y2Q5MDE5MmVjMDBkMTU5ZmZkNzBiNWMwOWUzOTFmOTM5NzI0ZmUwNTJmZGYzNzA1ZmUiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==
-    hash: 7f7504524d98abfb8400b864f2b83969
+    value: ewogICJ0aW1lc3RhbXAiIDogMTc3MDEwMDU4MTUwMSwKICAicHJvZmlsZUlkIiA6ICJmNzM0MmExODMxZDA0ZDA5ODc4Y2ViOTVmOTUxYTllMSIsCiAgInByb2ZpbGVOYW1lIiA6ICJOb3RNMWtzIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2Q1MmMwYTZiMDhhY2Q5M2ViZjEwNWI5NGQ0OWQ0YmQ4OTg0YjRjZjg3ZjRjMmJjOGJiODgzNzgxZWNkOTE5MjEiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==
+    hash: fccb160085651be0d1101c346648fb51
 
   input_state:
     list:

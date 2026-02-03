@@ -1,6 +1,7 @@
-# ======================= #
-# SimpleVoiceRadio Config #
-# ======================= #
+# ===================================================== #
+#              SimpleVoiceRadio Config                  #
+# Help/Support - https://discord.com/invite/WESPMeKUDe  #
+# ===================================================== #
 
 radio:
   # Display name of the radio item (supports MiniMessage and legacy color codes)
@@ -52,6 +53,11 @@ radio-block:
   # If true, output radios emit redstone signal (1-15) based on distance from input
   # If false, radios will still transmit audio but without redstone signal output
   signal_output_system: true
+
+  # If true, enables integration with CustomDiscsSVC plugin
+  # When enabled, music discs played in jukeboxes below radio blocks will be broadcast
+  # When disabled, the CustomDiscs bridge functionality is completely turned off
+  custom_discs_integration: false
 
 skin:
   # MineSkin API key for uploading custom radio block textures
