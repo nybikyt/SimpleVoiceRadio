@@ -106,20 +106,28 @@ public class EventHandler implements Listener {
             float yaw = Math.round(event.getPlayer().getYaw() / 90f) * 90f;
             Location center = event.getBlock().getLocation().toCenterLocation();
             center.getBlock().setBlockData(Bukkit.createBlockData(material), true);
+
             center.setPitch(0f);
             center.setYaw(yaw);
 
-            Location offset = center.clone().add(0,1,0);
-            List<ItemDisplay> itemDisplays = displayEntityManager.createItemDisplays(offset);
-            int frequency = plugin.getConfig().getBoolean("radio-block.redstone_frequency", false) ? event.getBlock().getBlockPower() : 1;
-
-            TextDisplay textDisplay = displayEntityManager.createTextDisplay(offset, frequency);
-
-            dataManager.setBlock(event.getBlock().getLocation(), frequency, "output", itemDisplays, textDisplay);
-            updateRadioData(dataManager.getBlock(event.getBlock().getLocation()), frequency);
-
-            if (addon != null) addon.createChannel(event.getBlock().getLocation());
+            setBlock(center, false);
         }, 1L);
+    }
+
+    public void setBlock(Location location, Boolean modifyBlock) {
+        if (dataManager.getBlock(location) != null) return;
+
+        Location offset = location.clone().add(0,1,0);
+        List<ItemDisplay> itemDisplays = displayEntityManager.createItemDisplays(offset);
+        int frequency = plugin.getConfig().getBoolean("radio-block.redstone_frequency", false) ? location.getBlock().getBlockPower() : 1;
+
+        TextDisplay textDisplay = displayEntityManager.createTextDisplay(offset, frequency);
+
+        dataManager.setBlock(location, frequency, "output", itemDisplays, textDisplay);
+        updateRadioData(dataManager.getBlock(location), frequency);
+        if (modifyBlock) location.getBlock().setType(material, false);
+
+        if (addon != null) addon.createChannel(location);
     }
 
     @org.bukkit.event.EventHandler

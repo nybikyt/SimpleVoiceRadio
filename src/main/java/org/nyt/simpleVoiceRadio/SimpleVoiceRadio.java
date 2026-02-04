@@ -3,6 +3,7 @@ package org.nyt.simpleVoiceRadio;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import de.maxhenkel.voicechat.api.BukkitVoicechatService;
+import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,13 +56,6 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         PacketHandler packetHandler = new PacketHandler(this);
         packetHandler.registerSoundListener();
 
-        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            event.registrar().register(
-                    "simple_voice_radio",
-                    "SimpleVoiceRadio command",
-                    new CommandHandler(this, item, skinManager)
-            );
-        });
 
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
         if (service != null) {
@@ -71,7 +65,15 @@ public final class SimpleVoiceRadio extends JavaPlugin {
             LOGGER.error("Error while loading addon! Bye :(");
         }
 
-        getServer().getPluginManager().registerEvents(new EventHandler(this, dataManager, displayEntityManager, voiceAddon, skinManager, item), this);
+        EventHandler eventHandler = new EventHandler(this, dataManager, displayEntityManager, voiceAddon, skinManager, item);
+        getServer().getPluginManager().registerEvents(eventHandler, this);
+
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register(
+                    new CommandHandler(this, item, skinManager, eventHandler).createCommand(),
+                    "Simple Voice Radio plugin commands"
+            );
+        });
 
         if (getConfig().getBoolean("radio-block.custom_discs_integration", false)
                 && getServer().getPluginManager().getPlugin("CustomDiscs") != null) {
