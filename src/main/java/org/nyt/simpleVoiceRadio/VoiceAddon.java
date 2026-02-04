@@ -4,7 +4,10 @@ import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import de.maxhenkel.voicechat.api.events.*;
 import de.maxhenkel.voicechat.api.VolumeCategory;
+import de.maxhenkel.voicechat.api.opus.OpusDecoder;
+import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import org.bukkit.Bukkit;
+import org.nyt.simpleVoiceRadio.Misc.RadioAudioEffect;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.nyt.simpleVoiceRadio.Utils.DataManager;
@@ -27,6 +30,9 @@ public class VoiceAddon implements VoicechatPlugin {
     private final Set<Location> activeOutputs = ConcurrentHashMap.newKeySet();
     private final Map<Location, UUID> activeDiscBroadcasts = new ConcurrentHashMap<>();
     private final Set<Location> discActiveOutputs = ConcurrentHashMap.newKeySet();
+    private RadioAudioEffect radioEffect;
+    private OpusDecoder opusDecoder;
+    private OpusEncoder opusEncoder;
 
     public VoiceAddon(DataManager dataManager, SimpleVoiceRadio plugin, JukeboxManager jukeboxManager) {
         this.dataManager = dataManager;
@@ -53,6 +59,14 @@ public class VoiceAddon implements VoicechatPlugin {
 
     private void onServerStart(VoicechatServerStartedEvent event) {
         api = event.getVoicechat();
+
+        if (plugin.getConfig().getBoolean("audio-effects.enabled", true)) {
+            opusDecoder = api.createDecoder();
+            opusEncoder = api.createEncoder();
+
+            radioEffect = new RadioAudioEffect(plugin);
+        }
+
         createOutputChannels();
         VolumeCategory radioCategory = api.volumeCategoryBuilder()
                 .setId(RADIO_CATEGORY)
@@ -143,6 +157,19 @@ public class VoiceAddon implements VoicechatPlugin {
         }
     }
 
+    private byte[] applyRadioEffects(byte[] opusData) {
+        if (radioEffect == null || !plugin.getConfig().getBoolean("audio-effects.enabled", true)) return opusData;
+
+        try {
+            short[] pcmData = opusDecoder.decode(opusData);
+            radioEffect.apply(pcmData);
+            return opusEncoder.encode(pcmData);
+        } catch (Exception e) {
+            SimpleVoiceRadio.LOGGER.error("Error applying radio effects: {}", e.getMessage());
+            return opusData;
+        }
+    }
+
     private void onLocationalPacket(LocationalSoundPacketEvent event) {
         try {
             UUID channelId = event.getPacket().getChannelId();
@@ -161,7 +188,8 @@ public class VoiceAddon implements VoicechatPlugin {
                     return;
                 }
 
-                sendDiscToOutputs(audioData, radioData.getFrequency());
+                byte[] processedAudio = applyRadioEffects(audioData);
+                sendDiscToOutputs(processedAudio, radioData.getFrequency());
                 return;
             }
 
@@ -225,7 +253,8 @@ public class VoiceAddon implements VoicechatPlugin {
 
             Location location = new Location(world, position.getX(), position.getY(), position.getZ());
 
-            sendPacket(location, event.getPacket().getOpusEncodedData());
+            byte[] processedAudio = applyRadioEffects(event.getPacket().getOpusEncodedData());
+            sendPacket(location, processedAudio);
 
         } catch (Exception e) {
             SimpleVoiceRadio.LOGGER.error("Error processing microphone packet: {}", e.getMessage());

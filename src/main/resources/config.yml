@@ -64,3 +64,19 @@ skin:
   # Get your free API key at: https://account.mineskin.org/keys/
   # If left empty or invalid, the plugin will use default textures
   api_key: TOKEN_TOKEN_TOKEN
+
+audio-effects:
+  # Enable/disable radio audio effects (bandpass filter and noise)
+  enabled: true
+
+  # Center frequency for the bandpass filter (Hz)
+  # Controls the main frequency that passes through clearly
+  center_frequency: 750.0
+
+  # Bandwidth of the filter (Hz)
+  # Wider bandwidth = more frequencies pass through (clearer sound)
+  bandwidth: 4000.0
+
+  # Audio degradation severity (0.0 - 1.0)
+  # Higher values = more static/noise and narrower frequency range
+  severity: 0.05
