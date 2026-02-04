@@ -69,6 +69,10 @@ audio-effects:
   # Enable/disable radio audio effects (bandpass filter and noise)
   enabled: true
 
+  # Apply audio effects to CustomDiscs broadcasts
+  # If false, custom discs will bypass audio processing (recommended for stability)
+  apply_to_custom_discs: false
+
   # Center frequency for the bandpass filter (Hz)
   # Controls the main frequency that passes through clearly
   center_frequency: 750.0

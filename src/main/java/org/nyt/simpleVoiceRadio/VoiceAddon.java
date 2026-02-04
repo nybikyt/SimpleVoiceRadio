@@ -158,12 +158,19 @@ public class VoiceAddon implements VoicechatPlugin {
     }
 
     private byte[] applyRadioEffects(byte[] opusData) {
-        if (radioEffect == null || !plugin.getConfig().getBoolean("audio-effects.enabled", true)) return opusData;
-
+        if (radioEffect == null || !plugin.getConfig().getBoolean("radio-block.audio_effects.enabled", true)) return opusData;
         try {
             short[] pcmData = opusDecoder.decode(opusData);
+
+            if (pcmData == null || pcmData.length != 960) return opusData;
+
             radioEffect.apply(pcmData);
-            return opusEncoder.encode(pcmData);
+
+            try {
+                return opusEncoder.encode(pcmData);
+            } catch (AssertionError e) {
+                return opusData;
+            }
         } catch (Exception e) {
             SimpleVoiceRadio.LOGGER.error("Error applying radio effects: {}", e.getMessage());
             return opusData;
@@ -188,7 +195,9 @@ public class VoiceAddon implements VoicechatPlugin {
                     return;
                 }
 
-                byte[] processedAudio = applyRadioEffects(audioData);
+                byte[] processedAudio = plugin.getConfig().getBoolean("audio-effects.apply_to_custom_discs", false)
+                        ? applyRadioEffects(audioData)
+                        : audioData;
                 sendDiscToOutputs(processedAudio, radioData.getFrequency());
                 return;
             }
