@@ -22,6 +22,7 @@ public class Item {
     private final SimpleVoiceRadio plugin;
     private final DisplayEntityManager displayEntityManager;
     private final SkinManager skinManager;
+    public static final NamespacedKey RADIO_KEY = NamespacedKey.fromString("radio");
 
     public Item(SimpleVoiceRadio plugin, DisplayEntityManager displayEntityManager, SkinManager skinManager) {
         this.plugin = plugin;
@@ -43,7 +44,7 @@ public class Item {
         }
 
         meta.getPersistentDataContainer().set(
-                NamespacedKey.fromString("radio"),
+                RADIO_KEY,
                 PersistentDataType.BOOLEAN,
                 true
         );

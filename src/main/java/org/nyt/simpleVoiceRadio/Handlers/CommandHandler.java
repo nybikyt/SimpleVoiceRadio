@@ -1,110 +1,109 @@
 package org.nyt.simpleVoiceRadio.Handlers;
 
-import io.papermc.paper.command.brigadier.BasicCommand;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import io.papermc.paper.math.BlockPosition;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.nyt.simpleVoiceRadio.Misc.Item;
 import org.nyt.simpleVoiceRadio.Misc.RecipeHolder;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 import org.nyt.simpleVoiceRadio.Utils.SkinManager;
-
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
-public class CommandHandler implements BasicCommand {
+
+public class CommandHandler {
     private final SimpleVoiceRadio plugin;
     private final Item item;
     private final SkinManager skinManager;
-    private final static Map<String, String> arguments = Map.ofEntries(
-            Map.entry("reload", "simple_voice_radio.reload_config"),
-            Map.entry("give", "simple_voice_radio.give"),
-            Map.entry("view_craft", "simple_voice_radio.can_view_craft")
-    );
-    private final Component usage = Component.text("Usage: /simple_voice_radio " + arguments.keySet().stream().toList(), TextColor.color(214, 54, 67));
-    private final Component noPermission = Component.text("You don't have permission to use this command!", TextColor.color(214, 54, 67));
-    private final Component playerOnly = Component.text("Only players can use this command!", TextColor.color(214, 54, 67));
+    private final EventHandler eventHandler;
 
-    public CommandHandler(SimpleVoiceRadio plugin, Item item, SkinManager skinManager) {
+    public CommandHandler(SimpleVoiceRadio plugin, Item item, SkinManager skinManager, EventHandler eventHandler) {
         this.plugin = plugin;
         this.item = item;
         this.skinManager = skinManager;
+        this.eventHandler = eventHandler;
     }
 
-    @Override
-    public @Nullable String permission() {
-        return "simple_voice_radio.command";
-    }
+    public LiteralCommandNode<CommandSourceStack> createCommand() {
+        return Commands.literal("simple_voice_radio")
+                .requires(source -> source.getSender().hasPermission("simple_voice_radio.command"))
 
-    @Override
-    public void execute(@NotNull CommandSourceStack stack, @NotNull String[] args) {
+                .then(Commands.literal("reload")
+                        .requires(source -> source.getSender().hasPermission("simple_voice_radio.reload_config"))
+                        .executes(ctx -> {
 
-        CommandSender sender = stack.getSender();
-
-        if (args.length == 0) {
-            sender.sendMessage(usage);
-            return;
-        }
-
-        String arg = args[0].toLowerCase();
-
-        if (arguments.containsKey(arg)) {
-            if (sender.hasPermission(arguments.get(arg))) {
-                switch (arg) {
-                    case "reload" -> {
-                        try {
                             plugin.reloadConfig();
                             skinManager.reloadConfig();
                             item.reloadCraft();
-                            sender.sendMessage(Component.text("Config has been reloaded!", TextColor.color(245, 203, 78)));
-                        } catch (Exception e) {
-                            sender.sendMessage(Component.text("Failed to reload config!", TextColor.color(214, 54, 67)));
-                            SimpleVoiceRadio.LOGGER.error("Failed to reload config", e);
-                        }
-                    }
-                    case "give" -> {
-                        if (sender instanceof Player player) {
-                            ItemStack radioItem = this.item.getItem();
-                            player.getInventory().addItem(radioItem);
-                            player.sendMessage(Component.text("Radio has been given!", TextColor.color(245, 203, 78)));
-                        } else sender.sendMessage(playerOnly);
-                    }
-                    case "view_craft" -> {
-                        if (sender instanceof Player player) {
-                            RecipeHolder holder = new RecipeHolder();
-                            Inventory inventory = Bukkit.createInventory(
-                                    holder,
-                                    InventoryType.WORKBENCH,
-                                    Component.text("Radio craft recipe")
+
+                            ctx.getSource().getSender().sendMessage(
+                                    Component.text("Config has been reloaded!", TextColor.color(245, 203, 78))
                             );
+
+                            return Command.SINGLE_SUCCESS;
+                        }))
+
+                .then(Commands.literal("give")
+                        .requires(source -> source.getSender().hasPermission("simple_voice_radio.give"))
+                        .then(Commands.argument("target", ArgumentTypes.players())
+
+                                .executes(ctx -> {
+
+                                    PlayerSelectorArgumentResolver resolver = ctx.getArgument("target", PlayerSelectorArgumentResolver.class);
+                                    List<Player> players = resolver.resolve(ctx.getSource());
+
+                                    players.forEach(target -> target.getInventory().addItem(item.getItem()));
+
+                                    ctx.getSource().getSender().sendMessage(Component.text("Radio has been given!", TextColor.color(245, 203, 78)));
+                                    return Command.SINGLE_SUCCESS;
+                                })))
+
+                .then(Commands.literal("view_craft")
+                        .requires(source -> source.getSender().hasPermission("simple_voice_radio.can_view_craft"))
+                        .executes(ctx -> {
+                            if (!(ctx.getSource().getExecutor() instanceof Player player)) return 0;
+
+                            RecipeHolder holder = new RecipeHolder();
+                            Inventory inventory = Bukkit.createInventory(holder, InventoryType.WORKBENCH, Component.text("Radio craft recipe"));
                             holder.setInventory(inventory);
                             inventory.setContents(item.getRecipeIngredients());
-                            player.openInventory(inventory);
-                        } else sender.sendMessage(playerOnly);
-                    }
-                }
-            } else sender.sendMessage(noPermission);
-        }
-        else sender.sendMessage(usage);
-    }
 
-    @Override
-    public @NotNull Collection<String> suggest(@NotNull CommandSourceStack stack, @NotNull String @NotNull [] args) {
-        if (args.length <= 1) {
-            return arguments.entrySet().stream()
-                    .filter(e -> stack.getSender().hasPermission(e.getValue()))
-                    .map(Map.Entry::getKey)
-                    .toList();
-        }
-        return List.of();
+                            player.openInventory(inventory);
+                            return Command.SINGLE_SUCCESS;
+                        }))
+
+
+// Removed until better times
+
+//                .then(Commands.literal("set_block")
+//                        .requires(source -> source.getSender().hasPermission("simple_voice_radio.can_set_block"))
+//                        .then(Commands.argument("position", ArgumentTypes.blockPosition())
+//                                .then(Commands.argument("world", ArgumentTypes.world())
+//
+//                                        .executes(ctx -> {
+//                                            World world = ctx.getArgument("world", World.class);
+//                                            BlockPositionResolver resolver = ctx.getArgument("position", BlockPositionResolver.class);
+//                                            BlockPosition blockPosition = resolver.resolve(ctx.getSource());
+//
+//                                            Location location = new Location(world, blockPosition.blockX(), blockPosition.blockY(), blockPosition.blockZ());
+//
+//                                            return Command.SINGLE_SUCCESS;
+//                                        }))))
+
+                .build();
     }
 }

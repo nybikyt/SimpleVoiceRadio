@@ -50,17 +50,37 @@ radio-block:
   # If false, players can manually change frequencies by shift-clicking
   redstone_frequency: false
 
-  # If true, output radios emit redstone signal (1-15) based on distance from input
+  # If true, output radios emit redstone signal (1-15) based on distance from input (BETA!!!, may be unstable)
   # If false, radios will still transmit audio but without redstone signal output
-  signal_output_system: true
+  signal_output_system: false
 
-  # If true, enables integration with CustomDiscsSVC plugin (BETA!!!, may be unstable)
+  # If true, enables integration with CustomDiscsSVC plugin
   # When enabled, music discs played in jukeboxes below radio blocks will be broadcast
   # When disabled, the CustomDiscs bridge functionality is completely turned off
-  custom_discs_integration: false
+  custom_discs_integration: true
 
 skin:
   # MineSkin API key for uploading custom radio block textures
   # Get your free API key at: https://account.mineskin.org/keys/
   # If left empty or invalid, the plugin will use default textures
   api_key: TOKEN_TOKEN_TOKEN
+
+audio-effects:
+  # Enable/disable radio audio effects (bandpass filter and noise)
+  enabled: true
+
+  # Apply audio effects to CustomDiscs broadcasts
+  # If false, custom discs will bypass audio processing (recommended for stability)
+  apply_to_custom_discs: false
+
+  # Center frequency for the bandpass filter (Hz)
+  # Controls the main frequency that passes through clearly
+  center_frequency: 750.0
+
+  # Bandwidth of the filter (Hz)
+  # Wider bandwidth = more frequencies pass through (clearer sound)
+  bandwidth: 4000.0
+
+  # Audio degradation severity (0.0 - 1.0)
+  # Higher values = more static/noise and narrower frequency range
+  severity: 0.05

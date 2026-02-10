@@ -16,6 +16,7 @@ import java.util.Map;
 
 public class JukeboxManager {
     private final SimpleVoiceRadio plugin;
+    public static final NamespacedKey CUSTOM_DISC_KEY = NamespacedKey.fromString("simple_voice_radio_disc");
     private static final Map<Integer, JukeboxSong> SIGNAL_TO_SONG = Map.ofEntries(
             Map.entry(1, JukeboxSong.THIRTEEN),
             Map.entry(2, JukeboxSong.CAT),
@@ -65,7 +66,7 @@ public class JukeboxManager {
 
     public static ItemStack createCustomMusicDisc(int signalLevel) {
         if (signalLevel <= 0 || signalLevel > 15) {
-            return null;
+            return ItemStack.of(Material.POISONOUS_POTATO);
         }
 
         ItemStack musicDisc = new ItemStack(Material.MUSIC_DISC_STAL);
@@ -74,7 +75,7 @@ public class JukeboxManager {
         JukeboxPlayableComponent component = meta.getJukeboxPlayable();
         component.setSong(SIGNAL_TO_SONG.get(signalLevel));
         meta.getPersistentDataContainer().set(
-                NamespacedKey.fromString("simple_voice_radio_disc"),
+                CUSTOM_DISC_KEY,
                 PersistentDataType.BOOLEAN,
                 true);
         meta.setHideTooltip(true);

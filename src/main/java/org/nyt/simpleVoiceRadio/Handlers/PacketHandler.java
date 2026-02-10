@@ -5,11 +5,10 @@ import com.comphenix.protocol.ProtocolManager;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
-import org.bukkit.NamespacedKey;
+import org.bukkit.*;
 import org.bukkit.block.Jukebox;
-import org.mineskin.data.Skin;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-import org.nyt.simpleVoiceRadio.Utils.SkinManager;
+import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
 
 public class PacketHandler {
     private final SimpleVoiceRadio plugin;
@@ -20,7 +19,7 @@ public class PacketHandler {
         this.protocolManager = plugin.getProtocolManager();
     }
 
-    public void registerSoundListener() {
+    public void registerPacketListener() {
         protocolManager.addPacketListener(new PacketAdapter(plugin,
                 ListenerPriority.NORMAL,
                 PacketType.Play.Server.WORLD_EVENT) {
@@ -29,7 +28,36 @@ public class PacketHandler {
             public void onPacketSending(PacketEvent event) {
                 if (event.getPacket().getIntegers().read(0).equals(1010)) {
                     Jukebox jukebox = (Jukebox) event.getPacket().getBlockPositionModifier().read(0).toLocation(event.getPlayer().getWorld()).getBlock().getState();
-                    if (jukebox.getRecord().getPersistentDataContainer().has(NamespacedKey.fromString("simple_voice_radio_disc"))) {
+                    if (jukebox.getRecord().getPersistentDataContainer().has(JukeboxManager.CUSTOM_DISC_KEY)) {
+                        event.setCancelled(true);
+                    }
+                }
+            }
+        });
+
+        protocolManager.addPacketListener(new PacketAdapter(plugin,
+                ListenerPriority.NORMAL,
+                PacketType.Play.Server.WORLD_PARTICLES) {
+
+            @Override
+            public void onPacketSending(PacketEvent event) {
+                var particle = event.getPacket().getNewParticles().read(0);
+
+                if (particle.getParticle() != Particle.NOTE) {
+                    return;
+                }
+
+                double x = event.getPacket().getDoubles().read(0);
+                double y = event.getPacket().getDoubles().read(1);
+                double z = event.getPacket().getDoubles().read(2);
+
+                var location = new Location(event.getPlayer().getWorld(), x, y - 1, z);
+
+                if (location.getBlock().getType().equals(Material.JUKEBOX)) {
+
+                    Jukebox jukebox = (Jukebox) location.getBlock().getState();
+
+                    if (jukebox.getRecord().getPersistentDataContainer().has(JukeboxManager.CUSTOM_DISC_KEY)) {
                         event.setCancelled(true);
                     }
                 }

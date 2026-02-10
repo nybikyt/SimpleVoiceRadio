@@ -53,40 +53,34 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         dataManager.startAutoSave();
 
         PacketHandler packetHandler = new PacketHandler(this);
-        packetHandler.registerSoundListener();
+        packetHandler.registerPacketListener();
 
-        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            event.registrar().register(
-                    "simple_voice_radio",
-                    "SimpleVoiceRadio command",
-                    new CommandHandler(this, item, skinManager)
-            );
-        });
 
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
         if (service != null) {
-            voiceAddon = new VoiceAddon(dataManager, this, jukeboxManager);
+            voiceAddon = new VoiceAddon(dataManager, this, jukeboxManager, displayEntityManager);
             service.registerPlugin(voiceAddon);
         } else {
             LOGGER.error("Error while loading addon! Bye :(");
         }
 
-        getServer().getPluginManager().registerEvents(new EventHandler(this, dataManager, displayEntityManager, voiceAddon, skinManager, item), this);
+        EventHandler eventHandler = new EventHandler(this, dataManager, displayEntityManager, voiceAddon, skinManager, jukeboxManager, item);
+        getServer().getPluginManager().registerEvents(eventHandler, this);
 
-        if (getConfig().getBoolean("radio-block.custom_discs_integration", false)
-                && getServer().getPluginManager().getPlugin("CustomDiscs") != null) {
-            try {
-                getServer().getPluginManager().registerEvents(new CustomDiscs(this, dataManager, displayEntityManager, voiceAddon), this);
-                LOGGER.info("CustomDiscs integration enabled! Additional features included");
-            } catch (Exception e) {
-                LOGGER.error("CustomDiscs found but there is an error: " + e);
-            }
-        }
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register(
+                    new CommandHandler(this, item, skinManager, eventHandler).createCommand(),
+                    "Simple Voice Radio plugin commands"
+            );
+        });
     }
 
     @Override
     public void onDisable() {
-        if (voiceAddon != null) getServer().getServicesManager().unregister(voiceAddon);
+        if (voiceAddon != null) {
+            getServer().getServicesManager().unregister(voiceAddon);
+            if (voiceAddon.getCustomDiscs() != null) voiceAddon.getCustomDiscs().unregisterPacketHandler();
+        }
         dataManager.shutdown();
     }
 }

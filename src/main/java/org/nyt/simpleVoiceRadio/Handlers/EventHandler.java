@@ -1,7 +1,6 @@
 package org.nyt.simpleVoiceRadio.Handlers;
 
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -25,6 +24,7 @@ import org.nyt.simpleVoiceRadio.Misc.RecipeHolder;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 import org.nyt.simpleVoiceRadio.Utils.DataManager;
 import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
 import org.nyt.simpleVoiceRadio.Utils.SkinManager;
 import org.nyt.simpleVoiceRadio.VoiceAddon;
 import java.util.List;
@@ -34,16 +34,18 @@ public class EventHandler implements Listener {
     private final Material material = Material.JUKEBOX;
     private final DataManager dataManager;
     private final DisplayEntityManager displayEntityManager;
-    private final VoiceAddon addon;
+    private final VoiceAddon voiceAddon;
     private final SkinManager skinManager;
+    private final JukeboxManager jukeboxManager;
     private final Item item;
 
-    public EventHandler(SimpleVoiceRadio plugin, DataManager dataManager, DisplayEntityManager displayEntityManager, VoiceAddon addon, SkinManager skinManager, Item item) {
+    public EventHandler(SimpleVoiceRadio plugin, DataManager dataManager, DisplayEntityManager displayEntityManager, VoiceAddon voiceAddon, SkinManager skinManager, JukeboxManager jukeboxManager, Item item) {
         this.plugin = plugin;
         this.dataManager = dataManager;
         this.displayEntityManager = displayEntityManager;
-        this.addon = addon;
+        this.voiceAddon = voiceAddon;
         this.skinManager = skinManager;
+        this.jukeboxManager = jukeboxManager;
         this.item = item;
     }
 
@@ -78,9 +80,9 @@ public class EventHandler implements Listener {
 
         dataManager.removeBlock(block.getLocation());
 
-        if (addon != null) {
-            addon.deleteChannel(block.getLocation());
-            addon.updateOutputChannels();
+        if (voiceAddon != null) {
+            voiceAddon.getChannelManager().deleteChannel(block.getLocation());
+            voiceAddon.getChannelManager().updateOutputChannels();
         }
 
         if (shouldModify) block.setType(Material.AIR);
@@ -96,7 +98,7 @@ public class EventHandler implements Listener {
 
     @org.bukkit.event.EventHandler(priority = EventPriority.LOWEST)
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (!event.getItemInHand().getPersistentDataContainer().has(NamespacedKey.fromString("radio"), PersistentDataType.BOOLEAN)) return;
+        if (!event.getItemInHand().getPersistentDataContainer().has(Item.RADIO_KEY)) return;
         if (dataManager.getRadioCountInChunk(event.getBlock().getLocation()) >= plugin.getConfig().getInt("radio-block.blocks_per_chunk_limit", 10)) {
             event.setCancelled(true);
             return;
@@ -105,7 +107,7 @@ public class EventHandler implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             float yaw = Math.round(event.getPlayer().getYaw() / 90f) * 90f;
             Location center = event.getBlock().getLocation().toCenterLocation();
-            center.getBlock().setBlockData(Bukkit.createBlockData(material), true);
+
             center.setPitch(0f);
             center.setYaw(yaw);
 
@@ -116,17 +118,18 @@ public class EventHandler implements Listener {
             TextDisplay textDisplay = displayEntityManager.createTextDisplay(offset, frequency);
 
             dataManager.setBlock(event.getBlock().getLocation(), frequency, "output", itemDisplays, textDisplay);
-            updateRadioData(dataManager.getBlock(event.getBlock().getLocation()), frequency);
+            center.getBlock().setBlockData(Bukkit.createBlockData(material), true);
 
-            if (addon != null) addon.createChannel(event.getBlock().getLocation());
+            if (voiceAddon != null) voiceAddon.getChannelManager().createChannel(event.getBlock().getLocation());
         }, 1L);
     }
+
 
     @org.bukkit.event.EventHandler
     public void onCraftPrepare(PrepareItemCraftEvent event) {
         ItemStack result = event.getInventory().getResult();
         if (event.getView().getPlayer() instanceof Player player && result != null) {
-            if ( result.getPersistentDataContainer().has(NamespacedKey.fromString("radio")) && !player.hasPermission("simple_voice_radio.can_craft") ) {
+            if ( result.getPersistentDataContainer().has(Item.RADIO_KEY) && !player.hasPermission("simple_voice_radio.can_craft") ) {
                 event.getInventory().setResult(null);
             }
         }
@@ -198,14 +201,18 @@ public class EventHandler implements Listener {
             player.getWorld().playSound(event.getClickedBlock().getLocation(), Sound.BLOCK_COPPER_BULB_TURN_ON, SoundCategory.MASTER, 3, 0);
 
             if (blockData.getState().equals("input")) blockData.setState("output");
-            else if (blockData.getState().equals("output")) blockData.setState("input");
+            else if (blockData.getState().equals("output")) {
+                blockData.setState("input");
+                if ( plugin.getConfig().getBoolean("radio-block.signal_output_system", false)
+                        && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false) ) jukeboxManager.updateJukeboxDisc(event.getClickedBlock().getLocation(), 0);
+            }
 
             if (redstoneMode) freq = currentPower;
         }
 
         updateRadioData(blockData, freq);
 
-        if (addon != null && !oldState.equals(blockData.getState())) addon.updateOutputChannels();
+        if (voiceAddon != null && !oldState.equals(blockData.getState())) voiceAddon.getChannelManager().updateOutputChannels();
     }
 
     @org.bukkit.event.EventHandler
@@ -221,7 +228,7 @@ public class EventHandler implements Listener {
         if (plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) {
             String oldState = blockData.getState();
             updateRadioData(blockData, event.getBlock().getBlockPower());
-            if (addon != null && !oldState.equals(blockData.getState())) addon.updateOutputChannels();
+            if (voiceAddon != null && !oldState.equals(blockData.getState())) voiceAddon.getChannelManager().updateOutputChannels();
         }
     }
 }
