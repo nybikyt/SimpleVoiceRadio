@@ -21,13 +21,15 @@ public class CategoryRegistration {
             VolumeCategory radioCategory = VoiceAddon.getApi().volumeCategoryBuilder()
                     .setId(RADIO_CATEGORY)
                     .setName("Radio")
+                    .setNameTranslationKey("simple_voice_radio.category.name")
                     .setDescription("The volume of all radio-blocks")
+                    .setDescriptionTranslationKey("simple_voice_radio.category.description")
                     .setIcon(loadIcon("assets/logo.png"))
                     .build();
             VoiceAddon.getApi().registerVolumeCategory(radioCategory);
         }
         catch (Exception e) {
-            e.printStackTrace();
+            SimpleVoiceRadio.LOGGER.error("Failed to register volume category {}", e.getMessage());
         }
     }
 
