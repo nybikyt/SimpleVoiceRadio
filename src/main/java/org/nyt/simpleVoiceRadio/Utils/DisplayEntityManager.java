@@ -50,7 +50,7 @@ public class DisplayEntityManager {
 
                 ItemDisplay display = loc.getWorld().spawn(loc, ItemDisplay.class, entity -> {
                     entity.setItemStack(item);
-                    entity.setViewRange((float) plugin.getConfig().getDouble("radio-block.view_range", 64));
+                    entity.setViewRange((float) plugin.getConfig().getDouble("radio-block.view_range", 64) / 64);
 
                     int translationIndex = (finalCount == 1) ? finalLoopIndex : finalLoopIndex + 4;
 

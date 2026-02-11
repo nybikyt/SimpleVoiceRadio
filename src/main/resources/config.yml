@@ -32,7 +32,7 @@ radio-block:
   # Maximum distance (in blocks) at which radio blocks are visible to players
   # Radio blocks beyond this distance won't render for players
   # Higher values may cause FPS drops for players with many radios nearby
-  view_range: 128
+  view_range: 64
 
   # Maximum frequency number that can be set on radios
   # Players can set frequencies from 1 to this number
