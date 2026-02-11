@@ -42,25 +42,30 @@ public class DisplayEntityManager {
             loopIndex++;
             for (int count = 1; count <= 2; count++) {
 
-                ItemDisplay display = loc.getWorld().spawn(loc, ItemDisplay.class);
                 ItemStack item = ItemStack.of(Material.PLAYER_HEAD);
                 setSkullByValue((String) skin, item);
 
-                display.setItemStack(item);
-                display.setViewRange((float) plugin.getConfig().getDouble("radio-block.view_range", 64));
+                int finalCount = count;
+                int finalLoopIndex = loopIndex;
 
-                int translationIndex = (count == 1) ? loopIndex : loopIndex + 4;
+                ItemDisplay display = loc.getWorld().spawn(loc, ItemDisplay.class, entity -> {
+                    entity.setItemStack(item);
+                    entity.setViewRange((float) plugin.getConfig().getDouble("radio-block.view_range", 64));
 
-                Vector3f translation = parseVector(
-                        skinManager.getTextureConfig().getString("offset." + translationIndex),
-                        new Vector3f(0, 0, 0)
-                );
-                Vector3f scale = parseVector(
-                        skinManager.getTextureConfig().getString("offset.scale"),
-                        new Vector3f(1.001f, 1.001f, 1.001f)
-                );
+                    int translationIndex = (finalCount == 1) ? finalLoopIndex : finalLoopIndex + 4;
 
-                updateTransformation(display, translation, null, scale, null);
+                    Vector3f translation = parseVector(
+                            skinManager.getTextureConfig().getString("offset." + translationIndex),
+                            new Vector3f(0, 0, 0)
+                    );
+                    Vector3f scale = parseVector(
+                            skinManager.getTextureConfig().getString("offset.scale"),
+                            new Vector3f(1.001f, 1.001f, 1.001f)
+                    );
+
+                    updateTransformation(entity, translation, null, scale, null);
+                });
+
                 list.add(display);
             }
         }
@@ -89,38 +94,38 @@ public class DisplayEntityManager {
 
 
     public TextDisplay createTextDisplay(Location loc, int frequency) {
-        TextDisplay display = loc.getWorld().spawn(loc, TextDisplay.class);
+        return loc.getWorld().spawn(loc, TextDisplay.class, entity -> {
+            entity.text(
+                    Component.text(
+                            String.format(skinManager.getTextureConfig().getString(
+                                            "frequency_display.number_format", "%d"),
+                                    frequency
+                            ),
+                            TextColor.fromHexString(skinManager.getTextureConfig().getString(
+                                    "frequency_display.color", "#AA0000")
+                            )
+                    )
+            );
 
-        display.text(
-                Component.text(
-                        String.format(skinManager.getTextureConfig().getString(
-                                "frequency_display.number_format", "%d"),
-                                frequency
-                        ),
-                        TextColor.fromHexString(skinManager.getTextureConfig().getString(
-                                "frequency_display.color", "#AA0000")
-                        )
-                )
-        );
-        display.setBackgroundColor(Color.fromARGB(0,0,0,0));
-        display.setViewRange((float) plugin.getConfig().getDouble("radio-block.view_range", 64));
+            entity.setBackgroundColor(Color.fromARGB(0,0,0,0));
 
-        display.setBrightness(new Display.Brightness(15,15));
+            entity.setViewRange((float) plugin.getConfig().getDouble("radio-block.view_range", 64));
 
-        Vector3f scale = parseVector(
-                skinManager.getTextureConfig().getString("frequency_display.scale"),
-                new Vector3f(0, 0, 0)
-        );
+            entity.setBrightness(new Display.Brightness(15,15));
 
-        Vector3f translation = parseVector(
-                skinManager.getTextureConfig().getString("frequency_display.offset"),
-                new Vector3f(0, 0, 0)
-        );
+            Vector3f scale = parseVector(
+                    skinManager.getTextureConfig().getString("frequency_display.scale"),
+                    new Vector3f(0, 0, 0)
+            );
 
-        Quaternionf leftRot = new Quaternionf().rotateY((float) Math.toRadians(180));
-        updateTransformation(display, translation, leftRot, scale, null);
+            Vector3f translation = parseVector(
+                    skinManager.getTextureConfig().getString("frequency_display.offset"),
+                    new Vector3f(0, 0, 0)
+            );
 
-        return display;
+            Quaternionf leftRot = new Quaternionf().rotateY((float) Math.toRadians(180));
+            updateTransformation(entity, translation, leftRot, scale, null);
+        });
     }
 
     public void setSkullByValue(String base64, ItemStack item) {
