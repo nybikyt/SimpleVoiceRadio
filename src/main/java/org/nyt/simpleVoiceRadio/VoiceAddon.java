@@ -84,6 +84,7 @@ public class VoiceAddon implements VoicechatPlugin {
         eventRegistration.registerEvent(VoicechatServerStartedEvent.class, voicechatServerStartedEvent -> {
             channelManager.createOutputChannels();
             utils.resetBroadCastingRadios();
+            utils.resetListeningRadios();
             new CategoryRegistration().registerVolumeCategory();
 
             if (plugin.getConfig().getBoolean("radio-block.custom_discs_integration", true)

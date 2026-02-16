@@ -167,6 +167,13 @@ public class Utils {
         });
     }
 
+    public void resetListeningRadios() {
+        dataManager.getAllRadiosByState("listen").forEach((location, radioData) -> {
+            radioData.setState("output");
+            Bukkit.getScheduler().runTask(plugin, () -> displayEntityManager.setStateSkin(radioData.getTextures(), radioData.getState()));
+        });
+    }
+
     public void playFile(AudioInputStream audioInputStream) {
         boolean applyEffect = plugin.getConfig().getBoolean("audio-effects.apply_to_files", true);
         JavaZoom.streamAudio(audioInputStream, opusEncoder, this::broadcastAudioToAll, new RadioAudioEffect(plugin), applyEffect)
