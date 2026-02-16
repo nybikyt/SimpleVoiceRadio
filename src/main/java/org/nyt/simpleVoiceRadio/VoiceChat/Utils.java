@@ -33,8 +33,8 @@ public class Utils {
     private final Map<Integer, Integer> lastDiscActivityTick = new ConcurrentHashMap<>();
 
     private final RadioAudioEffect radioEffect;
-    private final OpusDecoder opusDecoder;
-    private final OpusEncoder opusEncoder;
+    private final OpusDecoder decoder;
+    private final OpusEncoder encoder;
 
     public Utils(SimpleVoiceRadio plugin, DataManager dataManager, JukeboxManager jukeboxManager, DisplayEntityManager displayEntityManager, ChannelManager channelManager) {
         this.plugin = plugin;
@@ -44,8 +44,8 @@ public class Utils {
         this.channelManager = channelManager;
 
         this.radioEffect = new RadioAudioEffect(plugin);
-        this.opusDecoder = VoiceAddon.getApi().createDecoder();
-        this.opusEncoder = VoiceAddon.getApi().createEncoder();
+        this.decoder = VoiceAddon.getApi().createDecoder();
+        this.encoder = VoiceAddon.getApi().createEncoder();
 
         if (plugin.getConfig().getBoolean("radio-block.signal_output_system", false)
                 && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) startFrequencyCleanup();
@@ -118,7 +118,7 @@ public class Utils {
                 .map(entry -> entry.getValue().getFrequency())
                 .collect(Collectors.toSet());
 
-        final byte[] processedData = applyRadioEffects(audioData);
+        final byte[] processedData = applyRadioEffects(audioData, radioEffect, decoder, encoder);
 
         frequencies.forEach(frequency -> {
 
@@ -180,12 +180,12 @@ public class Utils {
 
     public void playFile(AudioInputStream audioInputStream) {
         boolean applyEffect = plugin.getConfig().getBoolean("audio-effects.apply_to_files", true);
+        OpusEncoder opusEncoder = VoiceAddon.getApi().createEncoder();
         JavaZoom.streamAudio(audioInputStream, opusEncoder, this::broadcastAudioToAll, new RadioAudioEffect(plugin), applyEffect)
-                .thenRun(this::resetBroadCastingRadios)
-                .exceptionally(ex -> {
-                    SimpleVoiceRadio.LOGGER.error("Audio playback failed: ", ex);
+                .whenComplete((result, ex) -> {
+                    if (ex != null) SimpleVoiceRadio.LOGGER.error("Audio playback failed: ", ex);
                     resetBroadCastingRadios();
-                    return null;
+                    opusEncoder.close();
                 });
     }
 
@@ -230,7 +230,7 @@ public class Utils {
                 });
     }
 
-    public void handleDiscPacket(Location radioLocation, byte[] audioData) {
+    public void handleDiscPacket(Location radioLocation, byte[] audioData, RadioAudioEffect effect, OpusEncoder encoder, OpusDecoder decoder) {
         if (audioData == null || audioData.length == 0) return;
 
         DataManager.RadioData blockData = dataManager.getBlock(radioLocation);
@@ -247,7 +247,7 @@ public class Utils {
 
         byte[] processedData = audioData;
         if (plugin.getConfig().getBoolean("audio-effects.apply_to_custom_discs", true)) {
-            processedData = applyRadioEffects(audioData);
+            processedData = applyRadioEffects(audioData, effect, decoder, encoder);
         }
 
         final byte[] finalData = processedData;
@@ -288,20 +288,20 @@ public class Utils {
         return raced != null ? raced : created;
     }
 
-    private byte[] applyRadioEffects(byte[] opusData) {
+    private byte[] applyRadioEffects(byte[] opusData, RadioAudioEffect radioAudioEffect, OpusDecoder decoder, OpusEncoder encoder) {
         if (opusData.length == 0
                 || !plugin.getConfig().getBoolean("audio-effects.enabled", true))
             return opusData;
 
         try {
-            short[] pcmData = opusDecoder.decode(opusData);
+            short[] pcmData = decoder.decode(opusData);
 
             if (pcmData == null || pcmData.length != 960) return opusData;
 
-            radioEffect.apply(pcmData);
+            radioAudioEffect.apply(pcmData);
 
             try {
-                return opusEncoder.encode(pcmData);
+                return encoder.encode(pcmData);
             } catch (AssertionError e) {
                 return opusData;
             }
