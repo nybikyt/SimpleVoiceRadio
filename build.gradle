@@ -15,7 +15,7 @@ repositories {
     }
     maven { url = 'https://maven.maxhenkel.de/repository/public' }
     maven { url = 'https://repo.subkek.space/maven-public'}
-    maven { url 'https://repo.inventivetalent.org/repository/public/' }
+    maven { url = 'https://repo.inventivetalent.org/repository/public/' }
 }
 
 dependencies {
@@ -33,6 +33,8 @@ shadowJar {
 
     relocate 'org.mineskin', 'org.nyt.simpleVoiceRadio.libs.mineskin'
     relocate 'org.jsoup', 'org.nyt.simpleVoiceRadio.libs.jsoup'
+
+    mergeServiceFiles()
 
     exclude 'META-INF/*.SF'
     exclude 'META-INF/*.DSA'

@@ -5,14 +5,18 @@ import de.maxhenkel.voicechat.api.ServerPlayer;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import de.maxhenkel.voicechat.api.opus.OpusDecoder;
 import de.maxhenkel.voicechat.api.opus.OpusEncoder;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.nyt.simpleVoiceRadio.Bridges.JavaZoom;
 import org.nyt.simpleVoiceRadio.Misc.RadioAudioEffect;
 import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
 import org.nyt.simpleVoiceRadio.Utils.DataManager;
+import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
 import org.nyt.simpleVoiceRadio.VoiceAddon;
 
+import javax.sound.sampled.AudioInputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -22,26 +26,26 @@ public class Utils {
     private final DataManager dataManager;
 
     private final JukeboxManager jukeboxManager;
+    private final DisplayEntityManager displayEntityManager;
     private final ChannelManager channelManager;
 
     private final Map<Integer, Integer> lastActivityTick = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> lastDiscActivityTick = new ConcurrentHashMap<>();
 
-    private RadioAudioEffect radioEffect;
-    private OpusDecoder opusDecoder;
-    private OpusEncoder opusEncoder;
+    private final RadioAudioEffect radioEffect;
+    private final OpusDecoder opusDecoder;
+    private final OpusEncoder opusEncoder;
 
-    public Utils(SimpleVoiceRadio plugin, DataManager dataManager, JukeboxManager jukeboxManager, ChannelManager channelManager) {
+    public Utils(SimpleVoiceRadio plugin, DataManager dataManager, JukeboxManager jukeboxManager, DisplayEntityManager displayEntityManager, ChannelManager channelManager) {
         this.plugin = plugin;
         this.dataManager = dataManager;
         this.jukeboxManager = jukeboxManager;
+        this.displayEntityManager = displayEntityManager;
         this.channelManager = channelManager;
 
         this.radioEffect = new RadioAudioEffect(plugin);
         this.opusDecoder = VoiceAddon.getApi().createDecoder();
         this.opusEncoder = VoiceAddon.getApi().createEncoder();
-
-
 
         if (plugin.getConfig().getBoolean("radio-block.signal_output_system", false)
                 && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) startFrequencyCleanup();
@@ -135,7 +139,7 @@ public class Utils {
 
                 ServerLevel serverLevel = VoiceAddon.getApi().fromServerLevel(loc.getWorld());
 
-                LocationalAudioChannel channel = channelManager.getOutputChannels().computeIfAbsent(loc, channelManager::createChannel);
+                LocationalAudioChannel channel = getOrCreateChannel(loc);
 
                 if (channel == null) return;
 
@@ -155,6 +159,66 @@ public class Utils {
         });
     }
 
+
+    public void resetBroadCastingRadios() {
+        dataManager.getAllRadiosByState("broadcast").forEach((location, radioData) -> {
+            radioData.setState("output");
+            Bukkit.getScheduler().runTask(plugin, () -> displayEntityManager.setStateSkin(radioData.getTextures(), radioData.getState()));
+        });
+    }
+
+    public void playFile(AudioInputStream audioInputStream) {
+        boolean applyEffect = plugin.getConfig().getBoolean("audio-effects.apply_to_files", false);
+        JavaZoom.streamAudio(audioInputStream, opusEncoder, this::broadcastAudioToAll, new RadioAudioEffect(plugin), applyEffect)
+                .thenRun(this::resetBroadCastingRadios)
+                .exceptionally(ex -> {
+                    SimpleVoiceRadio.LOGGER.error("Audio playback failed: ", ex);
+                    resetBroadCastingRadios();
+                    return null;
+                });
+    }
+
+    public void broadcastAudioToAll(byte[] audioData) {
+        if (audioData == null || audioData.length == 0) return;
+
+        Map<Location, DataManager.RadioData> allRadios = new ConcurrentHashMap<>();
+        allRadios.putAll(dataManager.getAllRadiosByState("output"));
+        allRadios.putAll(dataManager.getAllRadiosByState("broadcast"));
+
+        if (allRadios.isEmpty()) return;
+
+        allRadios.entrySet().stream()
+                .filter(entry -> entry.getKey().isChunkLoaded())
+                .forEach(entry -> {
+                    Location location = entry.getKey();
+
+                    ServerLevel serverLevel = VoiceAddon.getApi().fromServerLevel(location.getWorld());
+
+                    LocationalAudioChannel channel = getOrCreateChannel(location);
+
+                    if (channel == null) return;
+
+                    if (entry.getValue().getState().equals("output")) {
+                        entry.getValue().setState("broadcast");
+                        Bukkit.getScheduler().runTask(plugin, () -> displayEntityManager.setStateSkin(entry.getValue().getTextures(), entry.getValue().getState()));
+                    }
+
+                    Collection<ServerPlayer> nearbyPlayers = VoiceAddon.getApi().getPlayersInRange(
+                            serverLevel,
+                            VoiceAddon.getApi().createPosition(
+                                    location.getBlockX() + 0.5,
+                                    location.getBlockY() + 0.5,
+                                    location.getBlockZ() + 0.5
+                            ),
+                            channel.getDistance()
+                    );
+
+                    if (!nearbyPlayers.isEmpty()) {
+                        channel.send(audioData);
+                    }
+                });
+    }
+
     public void handleDiscPacket(Location radioLocation, byte[] audioData) {
         if (audioData == null || audioData.length == 0) return;
 
@@ -171,7 +235,7 @@ public class Utils {
         outputRadios.keySet().stream().filter(Location::isChunkLoaded).forEach(loc -> {
             ServerLevel serverLevel = VoiceAddon.getApi().fromServerLevel(loc.getWorld());
 
-            LocationalAudioChannel channel = channelManager.getOutputChannels().computeIfAbsent(loc, channelManager::createChannel);
+            LocationalAudioChannel channel = getOrCreateChannel(loc);
 
             if (channel == null) return;
 
@@ -186,15 +250,26 @@ public class Utils {
 
             if (!nearbyPlayers.isEmpty()) {
                 byte[] processedData = audioData;
-                if ( plugin.getConfig().getBoolean("audio-effects.apply_to_custom_discs", false) ) processedData = applyRadioEffects(audioData);
+                if (plugin.getConfig().getBoolean("audio-effects.apply_to_custom_discs", false)) processedData = applyRadioEffects(audioData);
                 channel.send(processedData);
             }
         });
     }
 
+    private LocationalAudioChannel getOrCreateChannel(Location loc) {
+        Map<Location, LocationalAudioChannel> channels = channelManager.getOutputChannels();
+        LocationalAudioChannel existing = channels.get(loc);
+        if (existing != null) return existing;
+
+        LocationalAudioChannel created = channelManager.createChannel(loc);
+        if (created == null) return null;
+
+        LocationalAudioChannel raced = channels.putIfAbsent(loc, created);
+        return raced != null ? raced : created;
+    }
+
     private byte[] applyRadioEffects(byte[] opusData) {
-        if (radioEffect == null
-                || opusData.length == 0
+        if (opusData.length == 0
                 || !plugin.getConfig().getBoolean("audio-effects.enabled", true))
             return opusData;
 

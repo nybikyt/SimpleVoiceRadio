@@ -18,6 +18,7 @@ import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
 import org.nyt.simpleVoiceRadio.Utils.SkinManager;
 import javax.annotation.Nullable;
+import java.io.File;
 
 public final class SimpleVoiceRadio extends JavaPlugin {
 
@@ -42,6 +43,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        new File(getDataFolder(), "audio").mkdirs();
 
         new Metrics(this, 28921);
         LOGGER.info("bStats metrics initialized");
@@ -69,7 +71,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             event.registrar().register(
-                    new CommandHandler(this, item, skinManager, eventHandler).createCommand(),
+                    new CommandHandler(this, item, skinManager, voiceAddon).createCommand(),
                     "Simple Voice Radio plugin commands"
             );
         });

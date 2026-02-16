@@ -71,7 +71,11 @@ audio-effects:
 
   # Apply audio effects to CustomDiscs broadcasts
   # If false, custom discs will bypass audio processing (recommended for stability)
-  apply_to_custom_discs: false
+  apply_to_custom_discs: true
+
+  # Apply audio effects to file broadcasts
+  # If false, files played via radio will bypass audio processing
+  apply_to_files: true
 
   # Center frequency for the bandpass filter (Hz)
   # Controls the main frequency that passes through clearly

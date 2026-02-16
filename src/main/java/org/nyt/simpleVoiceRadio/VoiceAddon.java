@@ -34,6 +34,10 @@ public class VoiceAddon implements VoicechatPlugin {
         return customDiscs;
     }
 
+    public Utils getUtils() {
+        return utils;
+    }
+
     public static VoicechatServerApi getApi() {
         return api;
     }
@@ -52,7 +56,7 @@ public class VoiceAddon implements VoicechatPlugin {
         api = (VoicechatServerApi) voicechatApi;
 
         channelManager = new ChannelManager(plugin, dataManager);
-        utils = new Utils(plugin, dataManager, jukeboxManager, channelManager);
+        utils = new Utils(plugin, dataManager, jukeboxManager, displayEntityManager, channelManager);
 
     }
 
@@ -79,6 +83,7 @@ public class VoiceAddon implements VoicechatPlugin {
 
         eventRegistration.registerEvent(VoicechatServerStartedEvent.class, voicechatServerStartedEvent -> {
             channelManager.createOutputChannels();
+            utils.resetBroadCastingRadios();
             new CategoryRegistration().registerVolumeCategory();
 
             if (plugin.getConfig().getBoolean("radio-block.custom_discs_integration", false)
