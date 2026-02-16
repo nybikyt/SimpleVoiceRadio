@@ -118,10 +118,13 @@ public class Utils {
                 .map(entry -> entry.getValue().getFrequency())
                 .collect(Collectors.toSet());
 
+        final byte[] processedData = applyRadioEffects(audioData);
+
         frequencies.forEach(frequency -> {
 
             if (plugin.getConfig().getBoolean("radio-block.signal_output_system", false)
-                    && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) lastActivityTick.put(frequency, plugin.getServer().getCurrentTick());
+                    && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false))
+                lastActivityTick.put(frequency, plugin.getServer().getCurrentTick());
 
             Map<Location, DataManager.RadioData> outputRadios = dataManager.getAllRadiosByStateAndFrequency("output", frequency);
 
@@ -144,7 +147,8 @@ public class Utils {
                 if (channel == null) return;
 
                 if (plugin.getConfig().getBoolean("radio-block.signal_output_system", false)
-                        && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) jukeboxManager.updateJukeboxDisc(loc, signalLevel);
+                        && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false))
+                    jukeboxManager.updateJukeboxDisc(loc, signalLevel);
 
                 Collection<ServerPlayer> nearbyPlayers = VoiceAddon.getApi().getPlayersInRange(
                         serverLevel,
@@ -153,7 +157,7 @@ public class Utils {
                 );
 
                 if (!nearbyPlayers.isEmpty()) {
-                    channel.send(applyRadioEffects(audioData));
+                    channel.send(processedData);
                 }
             });
         });
@@ -235,30 +239,39 @@ public class Utils {
         int frequency = blockData.getFrequency();
 
         if (plugin.getConfig().getBoolean("radio-block.signal_output_system", false)
-                && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) lastDiscActivityTick.put(frequency, plugin.getServer().getCurrentTick());
+                && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false))
+            lastDiscActivityTick.put(frequency, plugin.getServer().getCurrentTick());
 
-        Map<Location, DataManager.RadioData> outputRadios = dataManager.getAllRadiosByStateAndFrequency("output", frequency);
+        Map<Location, DataManager.RadioData> outputRadios =
+                dataManager.getAllRadiosByStateAndFrequency("output", frequency);
+
+        byte[] processedData = audioData;
+        if (plugin.getConfig().getBoolean("audio-effects.apply_to_custom_discs", true)) {
+            processedData = applyRadioEffects(audioData);
+        }
+
+        final byte[] finalData = processedData;
 
         outputRadios.keySet().stream().filter(Location::isChunkLoaded).forEach(loc -> {
             ServerLevel serverLevel = VoiceAddon.getApi().fromServerLevel(loc.getWorld());
-
             LocationalAudioChannel channel = getOrCreateChannel(loc);
-
             if (channel == null) return;
 
             if (plugin.getConfig().getBoolean("radio-block.signal_output_system", false)
-                    && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false)) jukeboxManager.updateJukeboxDisc(loc, 15);
+                    && !plugin.getConfig().getBoolean("radio-block.redstone_frequency", false))
+                jukeboxManager.updateJukeboxDisc(loc, 15);
 
             Collection<ServerPlayer> nearbyPlayers = VoiceAddon.getApi().getPlayersInRange(
                     serverLevel,
-                    VoiceAddon.getApi().createPosition(loc.getBlockX() + 0.5, loc.getBlockY() + 0.5, loc.getBlockZ() + 0.5),
+                    VoiceAddon.getApi().createPosition(
+                            loc.getBlockX() + 0.5,
+                            loc.getBlockY() + 0.5,
+                            loc.getBlockZ() + 0.5),
                     channel.getDistance()
             );
 
             if (!nearbyPlayers.isEmpty()) {
-                byte[] processedData = audioData;
-                if (plugin.getConfig().getBoolean("audio-effects.apply_to_custom_discs", true)) processedData = applyRadioEffects(audioData);
-                channel.send(processedData);
+                channel.send(finalData);
             }
         });
     }
