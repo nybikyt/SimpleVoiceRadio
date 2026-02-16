@@ -66,7 +66,7 @@ public class JukeboxManager {
 
     public static ItemStack createCustomMusicDisc(int signalLevel) {
         if (signalLevel <= 0 || signalLevel > 15) {
-            return ItemStack.of(Material.POISONOUS_POTATO);
+            return ItemStack.of(Material.AIR);
         }
 
         ItemStack musicDisc = new ItemStack(Material.MUSIC_DISC_STAL);

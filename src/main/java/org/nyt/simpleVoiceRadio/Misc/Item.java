@@ -35,7 +35,7 @@ public class Item {
         displayEntityManager.setSkullByValue(skinManager.getTextureConfig().getString("parsed_textures.item.value"), item);
         ItemMeta meta = item.getItemMeta();
 
-        String displayName = plugin.getConfig().getString("radio.display-name", "Radio");
+        String displayName = plugin.getConfig().getString("radio.display-name", "&#f57542Radio");
         meta.displayName(MiniMessageSerializer.parse(displayName).decoration(TextDecoration.ITALIC, false));
 
         List<Component> lore = parseLore();

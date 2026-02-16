@@ -86,7 +86,7 @@ public class VoiceAddon implements VoicechatPlugin {
             utils.resetBroadCastingRadios();
             new CategoryRegistration().registerVolumeCategory();
 
-            if (plugin.getConfig().getBoolean("radio-block.custom_discs_integration", false)
+            if (plugin.getConfig().getBoolean("radio-block.custom_discs_integration", true)
                     && plugin.getServer().getPluginManager().getPlugin("CustomDiscs") != null) {
 
                 try {

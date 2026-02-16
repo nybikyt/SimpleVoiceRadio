@@ -6,7 +6,7 @@ author: Nybik_YT
 website: https://modrinth.com/plugin/simple-voice-radio
 description: Plugin that adds a radio block that lets players communicate over distances
 permissions:
-  simple_voice_radio.broadcast_audio:
+  simple_voice_radio.play_audio:
     description: Can player broadcast audio to all output radios?
     default: op
   simple_voice_radio.command:

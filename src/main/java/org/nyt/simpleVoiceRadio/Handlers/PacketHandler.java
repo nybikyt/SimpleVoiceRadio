@@ -35,7 +35,8 @@ public class PacketHandler {
             }
         });
 
-        protocolManager.addPacketListener(new PacketAdapter(plugin,
+        if (plugin.getConfig().getBoolean("radio-block.signal_output_system", false))
+            protocolManager.addPacketListener(new PacketAdapter(plugin,
                 ListenerPriority.NORMAL,
                 PacketType.Play.Server.WORLD_PARTICLES) {
 

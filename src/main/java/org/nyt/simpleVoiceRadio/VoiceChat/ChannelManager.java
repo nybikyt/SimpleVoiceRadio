@@ -36,7 +36,7 @@ public class ChannelManager {
 
         if (channel == null) return null;
 
-        float radius = (float) plugin.getConfig().getDouble("radio-block.output_radius", 16);
+        float radius = (float) plugin.getConfig().getDouble("radio-block.output_radius", 15);
 
         channel.setDistance(radius);
         channel.setCategory(CategoryRegistration.getRadioCategory());

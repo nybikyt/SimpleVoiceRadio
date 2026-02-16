@@ -168,7 +168,7 @@ public class Utils {
     }
 
     public void playFile(AudioInputStream audioInputStream) {
-        boolean applyEffect = plugin.getConfig().getBoolean("audio-effects.apply_to_files", false);
+        boolean applyEffect = plugin.getConfig().getBoolean("audio-effects.apply_to_files", true);
         JavaZoom.streamAudio(audioInputStream, opusEncoder, this::broadcastAudioToAll, new RadioAudioEffect(plugin), applyEffect)
                 .thenRun(this::resetBroadCastingRadios)
                 .exceptionally(ex -> {
@@ -250,7 +250,7 @@ public class Utils {
 
             if (!nearbyPlayers.isEmpty()) {
                 byte[] processedData = audioData;
-                if (plugin.getConfig().getBoolean("audio-effects.apply_to_custom_discs", false)) processedData = applyRadioEffects(audioData);
+                if (plugin.getConfig().getBoolean("audio-effects.apply_to_custom_discs", true)) processedData = applyRadioEffects(audioData);
                 channel.send(processedData);
             }
         });
