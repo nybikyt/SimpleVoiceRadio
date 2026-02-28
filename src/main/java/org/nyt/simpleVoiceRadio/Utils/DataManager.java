@@ -83,10 +83,9 @@ public class DataManager {
     }
 
     private String getChunkKey(Location loc) {
-        Chunk chunk = loc.getChunk();
-        return chunk.getWorld().getName() + "," +
-                chunk.getX() + "," +
-                chunk.getZ();
+        return loc.getWorld().getName() + "," +
+                (loc.getBlockX() >> 4) + "," +
+                (loc.getBlockZ() >> 4);
     }
 
     public RadioData getBlock(Location loc) {
