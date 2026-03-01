@@ -1,11 +1,11 @@
-package org.nyt.simpleVoiceRadio.VoiceChat;
+package dev.nybikyt.simpleVoiceRadio.VoiceChat;
 
 import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import org.bukkit.Location;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-import org.nyt.simpleVoiceRadio.Utils.DataManager;
-import org.nyt.simpleVoiceRadio.VoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
+import dev.nybikyt.simpleVoiceRadio.VoiceAddon;
 
 import java.util.Map;
 import java.util.UUID;

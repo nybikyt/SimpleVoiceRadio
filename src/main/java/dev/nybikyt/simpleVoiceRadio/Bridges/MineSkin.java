@@ -1,10 +1,10 @@
-package org.nyt.simpleVoiceRadio.Bridges;
+package dev.nybikyt.simpleVoiceRadio.Bridges;
 
 import org.mineskin.JsoupRequestHandler;
 import org.mineskin.MineSkinClient;
 import org.mineskin.data.Visibility;
 import org.mineskin.request.GenerateRequest;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 
 import java.awt.image.BufferedImage;
 import java.util.concurrent.CompletableFuture;

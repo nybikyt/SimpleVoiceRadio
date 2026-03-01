@@ -1,4 +1,4 @@
-package org.nyt.simpleVoiceRadio.Handlers;
+package dev.nybikyt.simpleVoiceRadio.Handlers;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -18,15 +18,14 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
-import org.nyt.simpleVoiceRadio.Misc.Item;
-import org.nyt.simpleVoiceRadio.Misc.RecipeHolder;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-import org.nyt.simpleVoiceRadio.Utils.DataManager;
-import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
-import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
-import org.nyt.simpleVoiceRadio.Utils.SkinManager;
-import org.nyt.simpleVoiceRadio.VoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.Misc.Item;
+import dev.nybikyt.simpleVoiceRadio.Misc.RecipeHolder;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.JukeboxManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
+import dev.nybikyt.simpleVoiceRadio.VoiceAddon;
 import java.util.List;
 
 public class EventHandler implements Listener {

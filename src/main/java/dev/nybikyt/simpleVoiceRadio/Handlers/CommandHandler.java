@@ -1,4 +1,4 @@
-package org.nyt.simpleVoiceRadio.Handlers;
+package dev.nybikyt.simpleVoiceRadio.Handlers;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -15,12 +15,12 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
-import org.nyt.simpleVoiceRadio.Bridges.JavaZoom;
-import org.nyt.simpleVoiceRadio.Misc.Item;
-import org.nyt.simpleVoiceRadio.Misc.RecipeHolder;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-import org.nyt.simpleVoiceRadio.Utils.SkinManager;
-import org.nyt.simpleVoiceRadio.VoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.Bridges.JavaZoom;
+import dev.nybikyt.simpleVoiceRadio.Misc.Item;
+import dev.nybikyt.simpleVoiceRadio.Misc.RecipeHolder;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
+import dev.nybikyt.simpleVoiceRadio.VoiceAddon;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;

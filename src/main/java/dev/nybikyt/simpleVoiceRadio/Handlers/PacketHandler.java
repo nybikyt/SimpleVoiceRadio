@@ -1,4 +1,4 @@
-package org.nyt.simpleVoiceRadio.Handlers;
+package dev.nybikyt.simpleVoiceRadio.Handlers;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolManager;
@@ -7,8 +7,8 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import org.bukkit.*;
 import org.bukkit.block.Jukebox;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.JukeboxManager;
 
 public class PacketHandler {
     private final SimpleVoiceRadio plugin;

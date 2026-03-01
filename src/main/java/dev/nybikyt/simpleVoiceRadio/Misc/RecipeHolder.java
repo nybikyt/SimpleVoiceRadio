@@ -1,4 +1,4 @@
-package org.nyt.simpleVoiceRadio.Misc;
+package dev.nybikyt.simpleVoiceRadio.Misc;
 
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;

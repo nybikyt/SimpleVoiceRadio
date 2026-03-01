@@ -1,4 +1,4 @@
-package org.nyt.simpleVoiceRadio;
+package dev.nybikyt.simpleVoiceRadio;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
@@ -7,16 +7,15 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.nyt.simpleVoiceRadio.Bridges.CustomDiscs;
-import org.nyt.simpleVoiceRadio.Handlers.CommandHandler;
-import org.nyt.simpleVoiceRadio.Handlers.EventHandler;
-import org.nyt.simpleVoiceRadio.Handlers.PacketHandler;
-import org.nyt.simpleVoiceRadio.Misc.Item;
-import org.nyt.simpleVoiceRadio.Misc.Metrics;
-import org.nyt.simpleVoiceRadio.Utils.DataManager;
-import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
-import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
-import org.nyt.simpleVoiceRadio.Utils.SkinManager;
+import dev.nybikyt.simpleVoiceRadio.Handlers.CommandHandler;
+import dev.nybikyt.simpleVoiceRadio.Handlers.EventHandler;
+import dev.nybikyt.simpleVoiceRadio.Handlers.PacketHandler;
+import dev.nybikyt.simpleVoiceRadio.Misc.Item;
+import dev.nybikyt.simpleVoiceRadio.Misc.Metrics;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.JukeboxManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
 import javax.annotation.Nullable;
 import java.io.File;
 

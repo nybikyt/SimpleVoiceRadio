@@ -1,6 +1,6 @@
-package org.nyt.simpleVoiceRadio.Misc;
+package dev.nybikyt.simpleVoiceRadio.Misc;
 
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 import java.util.Random;
 
 public class RadioAudioEffect {

@@ -1,4 +1,4 @@
-package org.nyt.simpleVoiceRadio.Bridges;
+package dev.nybikyt.simpleVoiceRadio.Bridges;
 
 import de.maxhenkel.voicechat.api.opus.OpusDecoder;
 import de.maxhenkel.voicechat.api.opus.OpusEncoder;
@@ -6,12 +6,12 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-import org.nyt.simpleVoiceRadio.Misc.RadioAudioEffect;
-import org.nyt.simpleVoiceRadio.Utils.DataManager;
-import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
-import org.nyt.simpleVoiceRadio.VoiceAddon;
-import org.nyt.simpleVoiceRadio.VoiceChat.Utils;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Misc.RadioAudioEffect;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import dev.nybikyt.simpleVoiceRadio.VoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.VoiceChat.Utils;
 import space.subkek.customdiscs.api.CustomDiscsAPI;
 import space.subkek.customdiscs.api.event.CustomDiscInsertEvent;
 import space.subkek.customdiscs.api.event.LavaPlayerStopPlayingEvent;

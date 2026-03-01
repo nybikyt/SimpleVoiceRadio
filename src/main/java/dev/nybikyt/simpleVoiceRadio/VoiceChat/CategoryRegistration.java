@@ -1,8 +1,8 @@
-package org.nyt.simpleVoiceRadio.VoiceChat;
+package dev.nybikyt.simpleVoiceRadio.VoiceChat;
 
 import de.maxhenkel.voicechat.api.VolumeCategory;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-import org.nyt.simpleVoiceRadio.VoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.VoiceAddon;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

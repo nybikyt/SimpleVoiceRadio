@@ -1,16 +1,16 @@
-package org.nyt.simpleVoiceRadio;
+package dev.nybikyt.simpleVoiceRadio;
 
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.events.*;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.nyt.simpleVoiceRadio.Bridges.CustomDiscs;
-import org.nyt.simpleVoiceRadio.Utils.DataManager;
-import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
-import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
-import org.nyt.simpleVoiceRadio.VoiceChat.CategoryRegistration;
-import org.nyt.simpleVoiceRadio.VoiceChat.ChannelManager;
-import org.nyt.simpleVoiceRadio.VoiceChat.Utils;
+import dev.nybikyt.simpleVoiceRadio.Bridges.CustomDiscs;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.JukeboxManager;
+import dev.nybikyt.simpleVoiceRadio.VoiceChat.CategoryRegistration;
+import dev.nybikyt.simpleVoiceRadio.VoiceChat.ChannelManager;
+import dev.nybikyt.simpleVoiceRadio.VoiceChat.Utils;
 
 public class VoiceAddon implements VoicechatPlugin {
     private static VoicechatServerApi api = null;

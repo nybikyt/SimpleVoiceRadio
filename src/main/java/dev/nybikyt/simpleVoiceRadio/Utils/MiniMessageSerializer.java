@@ -1,4 +1,4 @@
-package org.nyt.simpleVoiceRadio.Utils;
+package dev.nybikyt.simpleVoiceRadio.Utils;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;

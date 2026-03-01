@@ -4,7 +4,7 @@ plugins {
     id("io.github.goooler.shadow") version "8.1.8"
 }
 
-group = 'org.nyt'
+group = 'dev.nybikyt'
 version = '0.0.4'
 
 repositories {

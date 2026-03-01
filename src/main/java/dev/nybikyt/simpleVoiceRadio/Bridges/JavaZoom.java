@@ -1,8 +1,7 @@
-package org.nyt.simpleVoiceRadio.Bridges;
+package dev.nybikyt.simpleVoiceRadio.Bridges;
 
 import de.maxhenkel.voicechat.api.opus.OpusEncoder;
-import org.nyt.simpleVoiceRadio.Misc.RadioAudioEffect;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Misc.RadioAudioEffect;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;

@@ -1,4 +1,4 @@
-package org.nyt.simpleVoiceRadio.VoiceChat;
+package dev.nybikyt.simpleVoiceRadio.VoiceChat;
 
 import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.ServerPlayer;
@@ -8,13 +8,13 @@ import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.nyt.simpleVoiceRadio.Bridges.JavaZoom;
-import org.nyt.simpleVoiceRadio.Misc.RadioAudioEffect;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-import org.nyt.simpleVoiceRadio.Utils.DataManager;
-import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
-import org.nyt.simpleVoiceRadio.Utils.JukeboxManager;
-import org.nyt.simpleVoiceRadio.VoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.Bridges.JavaZoom;
+import dev.nybikyt.simpleVoiceRadio.Misc.RadioAudioEffect;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.JukeboxManager;
+import dev.nybikyt.simpleVoiceRadio.VoiceAddon;
 
 import javax.sound.sampled.AudioInputStream;
 import java.util.*;

@@ -1,4 +1,4 @@
-package org.nyt.simpleVoiceRadio.Misc;
+package dev.nybikyt.simpleVoiceRadio.Misc;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -10,10 +10,10 @@ import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
-import org.nyt.simpleVoiceRadio.Utils.DisplayEntityManager;
-import org.nyt.simpleVoiceRadio.Utils.MiniMessageSerializer;
-import org.nyt.simpleVoiceRadio.Utils.SkinManager;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.MiniMessageSerializer;
+import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

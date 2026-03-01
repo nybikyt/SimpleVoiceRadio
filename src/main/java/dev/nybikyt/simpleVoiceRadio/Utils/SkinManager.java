@@ -1,9 +1,9 @@
-package org.nyt.simpleVoiceRadio.Utils;
+package dev.nybikyt.simpleVoiceRadio.Utils;
 
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.nyt.simpleVoiceRadio.Bridges.MineSkin;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Bridges.MineSkin;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;

@@ -1,9 +1,8 @@
-package org.nyt.simpleVoiceRadio.Utils;
+package dev.nybikyt.simpleVoiceRadio.Utils;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -17,7 +16,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.util.Transformation;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.nyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;

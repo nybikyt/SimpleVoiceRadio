@@ -1,6 +1,6 @@
 name: SimpleVoiceRadio
 version: '0.0.4'
-main: org.nyt.simpleVoiceRadio.SimpleVoiceRadio
+main: dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio
 api-version: '1.21'
 author: Nybik_YT
 website: https://modrinth.com/plugin/simple-voice-radio
@@ -11,6 +11,9 @@ permissions:
     default: op
   simple_voice_radio.command:
     description: Can player see the plugin`s command?
+    default: op
+  simple_voice_radio.can_view_craft:
+    description: Can player view radio craft?
     default: op
   simple_voice_radio.reload_config:
      description: Can player reload plugin`s config?
