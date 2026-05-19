@@ -20,7 +20,7 @@ radio:
     # Use comma-separated Minecraft material names
     # Use "air" for no item in that slot
     recipe:
-      - copper_ingot,chiseled_copper,copper_ingot
+      - copper_ingot,copper_ingot,copper_ingot
       - iron_ingot,jukebox,iron_ingot
       - redstone,netherite_ingot,redstone
 
