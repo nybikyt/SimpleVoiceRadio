@@ -1,68 +1,96 @@
 package dev.nybikyt.simpleVoiceRadio.Handlers;
 
-import com.comphenix.protocol.PacketType;
-import com.comphenix.protocol.ProtocolManager;
-import com.comphenix.protocol.events.ListenerPriority;
-import com.comphenix.protocol.events.PacketAdapter;
-import com.comphenix.protocol.events.PacketEvent;
-import org.bukkit.*;
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.event.PacketListenerAbstract;
+import com.github.retrooper.packetevents.event.PacketSendEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.particle.type.ParticleTypes;
+import com.github.retrooper.packetevents.util.Vector3d;
+import com.github.retrooper.packetevents.util.Vector3i;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEffect;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerParticle;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.block.Jukebox;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 import dev.nybikyt.simpleVoiceRadio.Utils.JukeboxManager;
 
-public class PacketHandler {
+public class PacketHandler extends PacketListenerAbstract {
     private final SimpleVoiceRadio plugin;
-    private ProtocolManager protocolManager;
 
     public PacketHandler(SimpleVoiceRadio plugin) {
         this.plugin = plugin;
-        this.protocolManager = plugin.getProtocolManager();
     }
 
     public void registerPacketListener() {
-        protocolManager.addPacketListener(new PacketAdapter(plugin,
-                ListenerPriority.NORMAL,
-                PacketType.Play.Server.WORLD_EVENT) {
+        PacketEvents.getAPI().getEventManager().registerListener(this);
+    }
 
-            @Override
-            public void onPacketSending(PacketEvent event) {
-                if (event.getPacket().getIntegers().read(0).equals(1010)) {
-                    Jukebox jukebox = (Jukebox) event.getPacket().getBlockPositionModifier().read(0).toLocation(event.getPlayer().getWorld()).getBlock().getState();
-                    if (jukebox.getRecord().getPersistentDataContainer().has(JukeboxManager.CUSTOM_DISC_KEY)) {
-                        event.setCancelled(true);
-                    }
+    @Override
+    public void onPacketSend(PacketSendEvent event) {
+        if (event.getPacketType() == PacketType.Play.Server.EFFECT) {
+            WrapperPlayServerEffect wrapper = new WrapperPlayServerEffect(event);
+            if (wrapper.getType() == 1010) {
+                if (isCustomDisc(event, wrapper.getPosition())) {
+                    event.setCancelled(true);
                 }
             }
-        });
+            return;
+        }
 
-        if (plugin.getConfig().getBoolean("radio-block.signal_output_system", false))
-            protocolManager.addPacketListener(new PacketAdapter(plugin,
-                ListenerPriority.NORMAL,
-                PacketType.Play.Server.WORLD_PARTICLES) {
+        if (!plugin.getConfig().getBoolean("radio-block.signal_output_system")) {
+            return;
+        }
 
-            @Override
-            public void onPacketSending(PacketEvent event) {
-                var particle = event.getPacket().getNewParticles().read(0);
-
-                if (particle.getParticle() != Particle.NOTE) {
-                    return;
-                }
-
-                double x = event.getPacket().getDoubles().read(0);
-                double y = event.getPacket().getDoubles().read(1);
-                double z = event.getPacket().getDoubles().read(2);
-
-                var location = new Location(event.getPlayer().getWorld(), x, y - 1, z);
-
-                if (location.getBlock().getType().equals(Material.JUKEBOX)) {
-
-                    Jukebox jukebox = (Jukebox) location.getBlock().getState();
-
-                    if (jukebox.getRecord().getPersistentDataContainer().has(JukeboxManager.CUSTOM_DISC_KEY)) {
-                        event.setCancelled(true);
-                    }
-                }
+        if (event.getPacketType() == PacketType.Play.Server.PARTICLE) {
+            WrapperPlayServerParticle wrapper = new WrapperPlayServerParticle(event);
+            if (wrapper.getParticle().getType() != ParticleTypes.NOTE) {
+                return;
             }
-        });
+            Vector3d pos = wrapper.getPosition();
+            if (isCustomDisc(
+                    event,
+                    new Vector3i(
+                            (int) pos.getX(),
+                            (int) pos.getY() - 1,
+                            (int) pos.getZ()
+                    )
+            )) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    private boolean isCustomDisc(PacketSendEvent event, Vector3i pos) {
+        Player player = event.getPlayer();
+
+        Block block = player.getWorld().getBlockAt(
+                pos.getX(),
+                pos.getY(),
+                pos.getZ()
+        );
+
+        if (block.getType() != Material.JUKEBOX) {
+            return false;
+        }
+
+        Jukebox jukebox = (Jukebox) block.getState();
+
+        ItemStack record = jukebox.getRecord();
+        if (record.getType().isAir()) {
+            return false;
+        }
+
+        ItemMeta meta = record.getItemMeta();
+
+        return meta != null
+                && meta.getPersistentDataContainer().has(
+                JukeboxManager.CUSTOM_DISC_KEY,
+                PersistentDataType.BYTE
+        );
     }
 }

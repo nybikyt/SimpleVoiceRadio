@@ -3,32 +3,34 @@ package dev.nybikyt.simpleVoiceRadio.Utils;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Jukebox;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.components.JukeboxPlayableComponent;
 import org.bukkit.persistence.PersistentDataType;
 import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+
 import java.util.Map;
 
 public class JukeboxManager {
     private final SimpleVoiceRadio plugin;
     public static final NamespacedKey CUSTOM_DISC_KEY = NamespacedKey.fromString("simple_voice_radio_disc");
-    private static final Map<Integer, JukeboxSong> SIGNAL_TO_SONG = Map.ofEntries(
-            Map.entry(1, JukeboxSong.THIRTEEN),
-            Map.entry(2, JukeboxSong.CAT),
-            Map.entry(3, JukeboxSong.BLOCKS),
-            Map.entry(4, JukeboxSong.CHIRP),
-            Map.entry(5, JukeboxSong.FAR),
-            Map.entry(6, JukeboxSong.MALL),
-            Map.entry(7, JukeboxSong.MELLOHI),
-            Map.entry(8, JukeboxSong.STAL),
-            Map.entry(9, JukeboxSong.STRAD),
-            Map.entry(10, JukeboxSong.WARD),
-            Map.entry(11, JukeboxSong.ELEVEN),
-            Map.entry(12, JukeboxSong.WAIT),
-            Map.entry(13, JukeboxSong.PRECIPICE),
-            Map.entry(14, JukeboxSong.OTHERSIDE),
-            Map.entry(15, JukeboxSong.FIVE)
+
+    private static final Map<Integer, Material> SIGNAL_TO_DISC = Map.ofEntries(
+            Map.entry(1,  Material.MUSIC_DISC_13),
+            Map.entry(2,  Material.MUSIC_DISC_CAT),
+            Map.entry(3,  Material.MUSIC_DISC_BLOCKS),
+            Map.entry(4,  Material.MUSIC_DISC_CHIRP),
+            Map.entry(5,  Material.MUSIC_DISC_FAR),
+            Map.entry(6,  Material.MUSIC_DISC_MALL),
+            Map.entry(7,  Material.MUSIC_DISC_MELLOHI),
+            Map.entry(8,  Material.MUSIC_DISC_STAL),
+            Map.entry(9,  Material.MUSIC_DISC_STRAD),
+            Map.entry(10, Material.MUSIC_DISC_WARD),
+            Map.entry(11, Material.MUSIC_DISC_11),
+            Map.entry(12, Material.MUSIC_DISC_WAIT),
+            Map.entry(13, Material.MUSIC_DISC_OTHERSIDE),
+            Map.entry(14, Material.MUSIC_DISC_PIGSTEP),
+            Map.entry(15, Material.MUSIC_DISC_OTHERSIDE)
     );
 
     public JukeboxManager(SimpleVoiceRadio plugin) {
@@ -37,20 +39,18 @@ public class JukeboxManager {
 
     public static int calculateSignalLevel(double distance, double maxRadius) {
         if (distance > maxRadius) return 0;
-
-        int signalLevel = 15 - (int) Math.floor(distance / maxRadius * 15);
-
-        return Math.max(0, Math.min(15, signalLevel));
+        return Math.max(0, Math.min(15, 15 - (int) Math.floor(distance / maxRadius * 15)));
     }
 
     public void updateJukeboxDisc(Location location, int signalLevel) {
         Bukkit.getScheduler().runTask(plugin, () -> {
             Block block = location.getBlock();
-
             if (!(block.getState() instanceof Jukebox jukebox)) return;
 
             ItemStack currentDisc = jukebox.getRecord();
-            ItemStack newDisc = (signalLevel > 0 && signalLevel <= 15) ? createCustomMusicDisc(signalLevel) : null;
+            ItemStack newDisc = (signalLevel > 0 && signalLevel <= 15)
+                    ? createCustomMusicDisc(signalLevel)
+                    : new ItemStack(Material.AIR);
 
             if (currentDisc.isSimilar(newDisc)) return;
 
@@ -61,24 +61,15 @@ public class JukeboxManager {
     }
 
     public static ItemStack createCustomMusicDisc(int signalLevel) {
-        if (signalLevel <= 0 || signalLevel > 15) {
-            return ItemStack.of(Material.AIR);
-        }
+        if (signalLevel <= 0 || signalLevel > 15) return new ItemStack(Material.AIR);
 
-        ItemStack musicDisc = new ItemStack(Material.MUSIC_DISC_STAL);
-        ItemMeta meta = musicDisc.getItemMeta();
+        ItemStack disc = new ItemStack(SIGNAL_TO_DISC.get(signalLevel));
+        ItemMeta meta = disc.getItemMeta();
+        if (meta == null) return disc;
 
-        JukeboxPlayableComponent component = meta.getJukeboxPlayable();
-        component.setSong(SIGNAL_TO_SONG.get(signalLevel));
-        meta.getPersistentDataContainer().set(
-                CUSTOM_DISC_KEY,
-                PersistentDataType.BOOLEAN,
-                true);
-        meta.setHideTooltip(true);
-        meta.setJukeboxPlayable(component);
+        meta.getPersistentDataContainer().set(CUSTOM_DISC_KEY, PersistentDataType.BYTE, (byte) 1);
+        disc.setItemMeta(meta);
 
-        musicDisc.setItemMeta(meta);
-
-        return musicDisc;
+        return disc;
     }
 }

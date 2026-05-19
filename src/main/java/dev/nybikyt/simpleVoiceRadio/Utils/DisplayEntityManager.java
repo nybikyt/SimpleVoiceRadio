@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@SuppressWarnings("deprecation")
 public class DisplayEntityManager {
     private final SimpleVoiceRadio plugin;
     private final SkinManager skinManager;
@@ -41,7 +42,7 @@ public class DisplayEntityManager {
             loopIndex++;
             for (int count = 1; count <= 2; count++) {
 
-                ItemStack item = ItemStack.of(Material.PLAYER_HEAD);
+                ItemStack item = new ItemStack(Material.PLAYER_HEAD);
                 setSkullByValue((String) skin, item);
 
                 int finalCount = count;
@@ -82,7 +83,7 @@ public class DisplayEntityManager {
                 if (displayIndex >= displays.size()) return;
 
                 ItemDisplay display = displays.get(displayIndex);
-                ItemStack item = ItemStack.of(Material.PLAYER_HEAD);
+                ItemStack item = new ItemStack(Material.PLAYER_HEAD);
                 setSkullByValue((String) skin, item);
                 display.setItemStack(item);
 

@@ -1,11 +1,13 @@
 package dev.nybikyt.simpleVoiceRadio;
 
-import com.comphenix.protocol.ProtocolLibrary;
-import com.comphenix.protocol.ProtocolManager;
+import com.github.retrooper.packetevents.PacketEvents;
 import de.maxhenkel.voicechat.api.BukkitVoicechatService;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import dev.nybikyt.simpleVoiceRadio.Misc.WindChargeFix.DefaultEntityExplodeListener;
+import dev.nybikyt.simpleVoiceRadio.Misc.WindChargeFix.WindChargeEntityExplodeListener;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import dev.nybikyt.simpleVoiceRadio.Handlers.CommandHandler;
 import dev.nybikyt.simpleVoiceRadio.Handlers.EventHandler;
@@ -28,19 +30,31 @@ public final class SimpleVoiceRadio extends JavaPlugin {
     private final JukeboxManager jukeboxManager = new JukeboxManager(this);
     private final Item item = new Item(this, displayEntityManager, skinManager);
 
-    public ProtocolManager getProtocolManager() { return protocolManager; }
-    private ProtocolManager protocolManager;
-
     @Nullable
     private VoiceAddon voiceAddon;
 
     @Override
     public void onLoad() {
-        protocolManager = ProtocolLibrary.getProtocolManager();
+        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
+        PacketEvents.getAPI().getSettings()
+                .reEncodeByDefault(false)
+                .checkForUpdates(false);
+        PacketEvents.getAPI().load();
     }
 
     @Override
     public void onEnable() {
+        // Fuck Spigot.
+        try {
+            Class.forName("com.destroystokyo.paper.PaperConfig");
+        } catch (ClassNotFoundException e) {
+            Bukkit.getConsoleSender().sendMessage("Simple Voice Radio requires Paper server!");
+            Bukkit.getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        PacketEvents.getAPI().init();
+
         saveDefaultConfig();
         new File(getDataFolder(), "audio").mkdirs();
 
@@ -56,7 +70,6 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         PacketHandler packetHandler = new PacketHandler(this);
         packetHandler.registerPacketListener();
 
-
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
         if (service != null) {
             voiceAddon = new VoiceAddon(dataManager, this, jukeboxManager, displayEntityManager);
@@ -66,14 +79,29 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         }
 
         EventHandler eventHandler = new EventHandler(this, dataManager, displayEntityManager, voiceAddon, skinManager, jukeboxManager, item);
-        getServer().getPluginManager().registerEvents(eventHandler, this);
 
-        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            event.registrar().register(
-                    new CommandHandler(this, item, skinManager, voiceAddon).createCommand(),
-                    "Simple Voice Radio plugin commands"
+        try {
+            Class.forName("org.bukkit.entity.WindCharge");
+            getServer().getPluginManager().registerEvents(
+                    new WindChargeEntityExplodeListener(dataManager, eventHandler),
+                    this
             );
-        });
+
+        } catch (ClassNotFoundException e) {
+            getServer().getPluginManager().registerEvents(
+                    new DefaultEntityExplodeListener(dataManager, eventHandler),
+                    this
+            );
+        }
+
+        getServer().getPluginManager().registerEvents(
+                eventHandler,
+                this
+        );
+
+        CommandHandler commandHandler = new CommandHandler(this, item, skinManager, voiceAddon);
+        getCommand("simple_voice_radio").setExecutor(commandHandler);
+        getCommand("simple_voice_radio").setTabCompleter(commandHandler);
     }
 
     @Override
@@ -83,5 +111,6 @@ public final class SimpleVoiceRadio extends JavaPlugin {
             if (voiceAddon.getCustomDiscs() != null) voiceAddon.getCustomDiscs().unregisterPacketHandler();
         }
         dataManager.shutdown();
+        PacketEvents.getAPI().terminate();
     }
 }

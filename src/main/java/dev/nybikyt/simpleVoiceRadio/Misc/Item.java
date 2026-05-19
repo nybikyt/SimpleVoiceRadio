@@ -99,10 +99,9 @@ public class Item {
             setIngredient(recipe, '7', row3[1]);
             setIngredient(recipe, '8', row3[2]);
         } catch (Exception e) {
-            SimpleVoiceRadio.LOGGER.warn("Error while loading recipe: " + e.getMessage() + ". Using default recipe!");
-            recipe.shape("CHC", "IJI", "RNR");
+            SimpleVoiceRadio.LOGGER.warn("Error while loading recipe: {}. Using default recipe!", e.getMessage());
+            recipe.shape("CCC", "IJI", "RNR");
             recipe.setIngredient('C', Material.COPPER_INGOT);
-            recipe.setIngredient('H', Material.CHISELED_COPPER);
             recipe.setIngredient('I', Material.IRON_INGOT);
             recipe.setIngredient('J', Material.JUKEBOX);
             recipe.setIngredient('N', Material.NETHERITE_INGOT);
@@ -127,7 +126,7 @@ public class Item {
             for (char c : row.toCharArray()) {
                 RecipeChoice choice = choiceMap.get(c);
                 if (choice instanceof RecipeChoice.MaterialChoice materialChoice) {
-                    ingredients.add(new ItemStack(materialChoice.getChoices().get(0)));
+                    ingredients.add(new ItemStack(materialChoice.getChoices().getFirst()));
                 } else {
                     ingredients.add(new ItemStack(Material.AIR));
                 }
