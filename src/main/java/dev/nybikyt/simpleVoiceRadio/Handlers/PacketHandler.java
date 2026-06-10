@@ -9,21 +9,19 @@ import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.util.Vector3i;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEffect;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerParticle;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.Jukebox;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
-import dev.nybikyt.simpleVoiceRadio.Utils.JukeboxManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
 
 public class PacketHandler extends PacketListenerAbstract {
     private final SimpleVoiceRadio plugin;
+    private final DataManager dataManager;
 
-    public PacketHandler(SimpleVoiceRadio plugin) {
+    public PacketHandler(SimpleVoiceRadio plugin, DataManager dataManager) {
         this.plugin = plugin;
+        this.dataManager = dataManager;
     }
 
     public void registerPacketListener() {
@@ -35,7 +33,7 @@ public class PacketHandler extends PacketListenerAbstract {
         if (event.getPacketType() == PacketType.Play.Server.EFFECT) {
             WrapperPlayServerEffect wrapper = new WrapperPlayServerEffect(event);
             if (wrapper.getType() == 1010) {
-                if (isCustomDisc(event, wrapper.getPosition())) {
+                if (isRadioJukebox(event, wrapper.getPosition())) {
                     event.setCancelled(true);
                 }
             }
@@ -52,7 +50,7 @@ public class PacketHandler extends PacketListenerAbstract {
                 return;
             }
             Vector3d pos = wrapper.getPosition();
-            if (isCustomDisc(
+            if (isRadioJukebox(
                     event,
                     new Vector3i(
                             (int) pos.getX(),
@@ -65,32 +63,26 @@ public class PacketHandler extends PacketListenerAbstract {
         }
     }
 
-    private boolean isCustomDisc(PacketSendEvent event, Vector3i pos) {
+    /**
+     * Checks whether the given block position is one of the plugin's radio-block
+     * jukeboxes. Those are the only jukeboxes the plugin ever loads custom discs
+     * into (players can't interact with them), so a hit here means the EFFECT /
+     * NOTE packet belongs to a custom disc and must be suppressed.
+     * <p>
+     * This runs on a Netty IO thread, so it must not touch the block's tile
+     * entity (e.g. {@code block.getState()}) — doing so throws
+     * "Tile is null, asynchronous access?". {@link DataManager} is backed by a
+     * {@link java.util.concurrent.ConcurrentHashMap}, so the lookup is safe here.
+     */
+    private boolean isRadioJukebox(PacketSendEvent event, Vector3i pos) {
         Player player = event.getPlayer();
-
-        Block block = player.getWorld().getBlockAt(
-                pos.getX(),
-                pos.getY(),
-                pos.getZ()
-        );
-
-        if (block.getType() != Material.JUKEBOX) {
+        if (player == null) {
             return false;
         }
 
-        Jukebox jukebox = (Jukebox) block.getState();
+        World world = player.getWorld();
+        Location loc = new Location(world, pos.getX(), pos.getY(), pos.getZ());
 
-        ItemStack record = jukebox.getRecord();
-        if (record.getType().isAir()) {
-            return false;
-        }
-
-        ItemMeta meta = record.getItemMeta();
-
-        return meta != null
-                && meta.getPersistentDataContainer().has(
-                JukeboxManager.CUSTOM_DISC_KEY,
-                PersistentDataType.BYTE
-        );
+        return dataManager.getBlock(loc) != null;
     }
 }

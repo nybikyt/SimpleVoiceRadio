@@ -67,7 +67,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         dataManager.load();
         dataManager.startAutoSave();
 
-        PacketHandler packetHandler = new PacketHandler(this);
+        PacketHandler packetHandler = new PacketHandler(this, dataManager);
         packetHandler.registerPacketListener();
 
         BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
