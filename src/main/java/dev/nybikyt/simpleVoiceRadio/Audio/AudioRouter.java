@@ -137,6 +137,8 @@ public class AudioRouter {
             int frequency = entry.getKey();
             BlockKey transmitter = BlockKey.of(entry.getValue());
 
+            if (!antennaManager.hasClearance(transmitter)) continue;
+
             if (signalManager != null) {
                 int level = SignalManager.calculateLevel(Math.sqrt(bestDistances.get(frequency)), radius);
                 signalManager.report(frequency, transmitter, speakerId, level);
@@ -162,6 +164,8 @@ public class AudioRouter {
         int frequency = radio.getFrequency();
         BlockKey transmitter = BlockKey.of(radioLocation);
 
+        if (!antennaManager.hasClearance(transmitter)) return;
+
         if (signalManager != null) {
             signalManager.report(frequency, transmitter, streamId, FULL_SIGNAL_LEVEL);
         }
@@ -176,7 +180,9 @@ public class AudioRouter {
     private void sendToOutputs(BlockKey transmitter, int frequency, byte[] audioData, UUID streamId) {
         dataManager.forEachRadio(RadioState.OUTPUT, frequency, (location, radio) -> {
             if (!location.isChunkLoaded()) return;
-            if (!antennaManager.inRange(transmitter, BlockKey.of(location))) return;
+            BlockKey receiver = BlockKey.of(location);
+            if (!antennaManager.hasClearance(receiver)) return;
+            if (!antennaManager.inRange(transmitter, receiver)) return;
             sendToChannel(location, audioData, streamId);
         });
     }
@@ -213,6 +219,7 @@ public class AudioRouter {
         for (Location location : targets) {
             Radio radio = dataManager.get(location);
             if (radio == null || !location.isChunkLoaded()) continue;
+            if (!antennaManager.hasClearance(BlockKey.of(location))) continue;
 
             if (radio.getState() == RadioState.OUTPUT) {
                 dataManager.updateState(location, RadioState.BROADCAST);

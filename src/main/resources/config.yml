@@ -39,9 +39,13 @@ radio-block:
     # How often (in ticks) antennas above transmitting radios are re-scanned (requires restart)
     update_interval_ticks: 40
 
-    # If true, a full solid block anywhere above the antenna blocks transmission completely
-    # (slabs and other non-occluding blocks don't block the signal)
-    obstruction_check: true
+    # Number of empty (non-solid) blocks required directly above the radio for it to work.
+    # Only applies in chunk mode (mode: chunk). The radio needs open space above it, like
+    # a real antenna. Lightning rods stacked on the radio don't count as blocking - the
+    # empty space is measured above the last rod. Non-solid blocks (glass, slabs, torches,
+    # water, etc.) don't block; only full solid blocks do. Set to 0 or any negative value
+    # to disable the check entirely - then blocks above the radio never interfere.
+    required_clearance: 3
 
     # Lightning rods count -> transmission radius in chunks
     # Extend freely with "rods: chunks" entries

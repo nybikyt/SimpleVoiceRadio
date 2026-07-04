@@ -21,6 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AntennaManager {
 
     private static final Set<Material> LIGHTNING_RODS = buildLightningRods();
+    private static final RadioState[] SCANNED_STATES = {
+            RadioState.INPUT, RadioState.OUTPUT, RadioState.BROADCAST, RadioState.LISTEN
+    };
 
     private final SimpleVoiceRadio plugin;
     private final PluginConfig config;
@@ -28,7 +31,7 @@ public class AntennaManager {
     private final Map<BlockKey, Antenna> antennas = new ConcurrentHashMap<>();
     private Scheduler.TaskHandle refreshTask;
 
-    private record Antenna(int rods, boolean obstructed) {
+    private record Antenna(int rods, int clearance) {
     }
 
     private static Set<Material> buildLightningRods() {
@@ -66,7 +69,7 @@ public class AntennaManager {
     }
 
     private void refreshAll() {
-        for (RadioState state : new RadioState[]{RadioState.INPUT, RadioState.LISTEN}) {
+        for (RadioState state : SCANNED_STATES) {
             dataManager.getRadios(state).forEach((location, radio) -> {
                 if (!location.isChunkLoaded()) return;
                 Scheduler.runAt(plugin, location, () -> antennas.put(BlockKey.of(location), scan(location)));
@@ -90,31 +93,38 @@ public class AntennaManager {
             y++;
         }
 
-        boolean obstructed = false;
-        if (config.antennaObstructionCheck()) {
-            int highest = world.getHighestBlockYAt(x, z);
-            for (int checkY = y; checkY <= highest; checkY++) {
-                if (world.getBlockAt(x, checkY, z).getType().isOccluding()) {
-                    obstructed = true;
-                    break;
-                }
-            }
+        int requiredClearance = config.requiredClearance();
+        int clearance = 0;
+        int clearanceY = y;
+        while (clearance < requiredClearance && clearanceY <= world.getMaxHeight()) {
+            if (world.getBlockAt(x, clearanceY, z).getType().isOccluding()) break;
+            clearance++;
+            clearanceY++;
         }
 
-        return new Antenna(rods, obstructed);
+        return new Antenna(rods, clearance);
     }
 
     public void forget(Location location) {
         antennas.remove(BlockKey.of(location));
     }
 
+    public boolean hasClearance(BlockKey radio) {
+        if (!config.chunkMode()) return true;
+
+        int required = config.requiredClearance();
+        if (required <= 0) return true;
+
+        Antenna antenna = antennas.get(radio);
+        if (antenna == null) return true;
+        return antenna.clearance() >= required;
+    }
+
     public boolean inRange(BlockKey transmitter, BlockKey receiver) {
         if (!config.chunkMode()) return true;
         if (!transmitter.world().equals(receiver.world())) return false;
 
-        Antenna antenna = antennas.getOrDefault(transmitter, new Antenna(0, false));
-        if (antenna.obstructed()) return false;
-
+        Antenna antenna = antennas.getOrDefault(transmitter, new Antenna(0, 0));
         Map.Entry<Integer, Integer> entry = config.antennaRange().floorEntry(antenna.rods());
         int range = entry != null ? entry.getValue() : 0;
 

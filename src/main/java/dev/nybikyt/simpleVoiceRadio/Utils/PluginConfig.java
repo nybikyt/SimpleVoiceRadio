@@ -25,7 +25,7 @@ public final class PluginConfig {
             boolean chunkMode,
             boolean lightningDestroysRadio,
             long antennaUpdateIntervalTicks,
-            boolean antennaObstructionCheck,
+            int requiredClearance,
             NavigableMap<Integer, Integer> antennaRange,
             boolean effectsEnabled,
             boolean effectsForDiscs,
@@ -76,7 +76,7 @@ public final class PluginConfig {
                 "chunk".equalsIgnoreCase(config.getString("radio-block.mode", "global")),
                 config.getBoolean("radio-block.lightning_destroys_radio", true),
                 Math.max(1L, config.getLong("radio-block.antenna.update_interval_ticks", 40L)),
-                config.getBoolean("radio-block.antenna.obstruction_check", true),
+                config.getInt("radio-block.antenna.required_clearance", 3),
                 Collections.unmodifiableNavigableMap(antennaRange),
                 config.getBoolean("audio-effects.enabled", true),
                 config.getBoolean("audio-effects.apply_to_custom_discs", true),
@@ -127,12 +127,12 @@ public final class PluginConfig {
         return snapshot.lightningDestroysRadio();
     }
 
-    public long antennaUpdateIntervalTicks() {
-        return snapshot.antennaUpdateIntervalTicks();
+    public int requiredClearance() {
+        return snapshot.requiredClearance();
     }
 
-    public boolean antennaObstructionCheck() {
-        return snapshot.antennaObstructionCheck();
+    public long antennaUpdateIntervalTicks() {
+        return snapshot.antennaUpdateIntervalTicks();
     }
 
     public NavigableMap<Integer, Integer> antennaRange() {
