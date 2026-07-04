@@ -9,18 +9,17 @@ import com.github.retrooper.packetevents.util.Vector3d;
 import com.github.retrooper.packetevents.util.Vector3i;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEffect;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerParticle;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
-import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
 
 public class PacketHandler extends PacketListenerAbstract {
-    private final SimpleVoiceRadio plugin;
+
+    private static final int EFFECT_RECORD_PLAY = 1010;
+
     private final DataManager dataManager;
 
-    public PacketHandler(SimpleVoiceRadio plugin, DataManager dataManager) {
-        this.plugin = plugin;
+    public PacketHandler(DataManager dataManager) {
         this.dataManager = dataManager;
     }
 
@@ -28,49 +27,37 @@ public class PacketHandler extends PacketListenerAbstract {
         PacketEvents.getAPI().getEventManager().registerListener(this);
     }
 
+    @Override
     public void onPacketSend(PacketSendEvent event) {
         if (event.getPacketType() == PacketType.Play.Server.EFFECT) {
             WrapperPlayServerEffect wrapper = new WrapperPlayServerEffect(event);
-            if (wrapper.getType() == 1010) {
-                if (isRadioJukebox(event, wrapper.getPosition())) {
-                    event.setCancelled(true);
-                }
-            }
-            return;
-        }
+            if (wrapper.getType() != EFFECT_RECORD_PLAY) return;
 
-        if (!plugin.getConfig().getBoolean("radio-block.signal_output_system")) {
+            Vector3i pos = wrapper.getPosition();
+            if (isRadioAt(event, pos.getX(), pos.getY(), pos.getZ())) {
+                event.setCancelled(true);
+            }
             return;
         }
 
         if (event.getPacketType() == PacketType.Play.Server.PARTICLE) {
             WrapperPlayServerParticle wrapper = new WrapperPlayServerParticle(event);
-            if (wrapper.getParticle().getType() != ParticleTypes.NOTE) {
-                return;
-            }
+            if (wrapper.getParticle().getType() != ParticleTypes.NOTE) return;
+
             Vector3d pos = wrapper.getPosition();
-            if (isRadioJukebox(
-                    event,
-                    new Vector3i(
-                            (int) pos.getX(),
-                            (int) pos.getY() - 1,
-                            (int) pos.getZ()
-                    )
-            )) {
+            int x = (int) Math.floor(pos.getX());
+            int y = (int) Math.floor(pos.getY());
+            int z = (int) Math.floor(pos.getZ());
+
+            if (isRadioAt(event, x, y - 1, z) || isRadioAt(event, x, y, z)) {
                 event.setCancelled(true);
             }
         }
     }
 
-    private boolean isRadioJukebox(PacketSendEvent event, Vector3i pos) {
+    private boolean isRadioAt(PacketSendEvent event, int x, int y, int z) {
         Player player = event.getPlayer();
-        if (player == null) {
-            return false;
-        }
-
-        World world = player.getWorld();
-        Location loc = new Location(world, pos.getX(), pos.getY(), pos.getZ());
-
-        return dataManager.getBlock(loc) != null;
+        if (player == null) return false;
+        return dataManager.get(new Location(player.getWorld(), x, y, z)) != null;
     }
 }

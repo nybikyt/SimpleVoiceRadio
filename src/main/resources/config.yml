@@ -25,6 +25,35 @@ radio:
       - redstone,netherite_ingot,redstone
 
 radio-block:
+  # Signal propagation mode (requires restart)
+  # global - all radios on the same frequency hear each other anywhere in the world
+  # chunk  - signal reaches only output radios within N chunks of the transmitting radio,
+  #          N depends on lightning rods (facing up) stacked directly above the transmitter
+  mode: global
+
+  # If true, a lightning strike into the antenna (lightning rods above the radio)
+  # permanently destroys the radio: it stops working and drops nothing when broken
+  lightning_destroys_radio: true
+
+  antenna:
+    # How often (in ticks) antennas above transmitting radios are re-scanned (requires restart)
+    update_interval_ticks: 40
+
+    # If true, a full solid block anywhere above the antenna blocks transmission completely
+    # (slabs and other non-occluding blocks don't block the signal)
+    obstruction_check: true
+
+    # Lightning rods count -> transmission radius in chunks
+    # Extend freely with "rods: chunks" entries
+    range:
+      0: 3
+      1: 10
+      2: 30
+      3: 50
+      4: 70
+      5: 90
+      6: 120
+
   # How far (in blocks) the radio searches for nearby input radios
   # When a player speaks, the plugin looks for input radios within this radius
   input_search_radius: 15
@@ -52,15 +81,17 @@ radio-block:
 
   # If true, output radios emit redstone signal (1-15) based on distance from input (BETA!!!, may be unstable)
   # If false, radios will still transmit audio but without redstone signal output
-  signal_output_system: false
+  # (requires restart)
+  signal_output_system: true
 
   # If true, enables integration with CustomDiscsSVC plugin
   # When enabled, music discs played in jukeboxes below radio blocks will be broadcast
   # When disabled, the CustomDiscs bridge functionality is completely turned off
+  # (requires restart)
   custom_discs_integration: true
 
 skin:
-  # MineSkin API key for uploading custom radio block textures
+  # MineSkin API key for uploading custom radio block textures (requires restart)
   # Get your free API key at: https://account.mineskin.org/keys/
   # If left empty or invalid, the plugin will use default textures
   api_key: TOKEN_TOKEN_TOKEN

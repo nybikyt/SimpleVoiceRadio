@@ -1,7 +1,8 @@
 name: SimpleVoiceRadio
-version: '0.0.5'
+version: '${version}'
 main: dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio
-api-version: '1.19.4'
+api-version: '1.19'
+folia-supported: true
 author: Nybik_YT
 website: https://modrinth.com/plugin/simple-voice-radio
 description: Plugin that adds a radio block that lets players communicate over distances
@@ -21,7 +22,8 @@ commands:
       /<command> reload
       /<command> give <player>
       /<command> view_craft
-      /<command> play_audio <file|url|stop> [value]
+      /<command> play_audio <file|url> <value> [frequency|all] [loop]
+      /<command> play_audio stop
 
 permissions:
   simple_voice_radio.command:

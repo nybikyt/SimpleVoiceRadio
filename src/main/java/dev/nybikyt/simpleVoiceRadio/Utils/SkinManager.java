@@ -24,7 +24,8 @@ public class SkinManager {
             "assets/broadcast_state.png",
             "assets/input_state.png",
             "assets/listen_state.png",
-            "assets/output_state.png"
+            "assets/output_state.png",
+            "assets/destroyed_state.png"
     );
     private final String textureConfigPath = "texture.yml";
     private final String itemAssetPath = "assets/item.png";

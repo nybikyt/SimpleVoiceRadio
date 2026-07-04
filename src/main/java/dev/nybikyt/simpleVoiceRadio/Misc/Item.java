@@ -1,5 +1,9 @@
 package dev.nybikyt.simpleVoiceRadio.Misc;
 
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.MiniMessageSerializer;
+import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
@@ -9,20 +13,22 @@ import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
-import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
-import dev.nybikyt.simpleVoiceRadio.Utils.MiniMessageSerializer;
-import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class Item {
+
+    public static final NamespacedKey RADIO_KEY = Objects.requireNonNull(NamespacedKey.fromString("simplevoiceradio:radio"));
+    private static final NamespacedKey LEGACY_RADIO_KEY = Objects.requireNonNull(NamespacedKey.fromString("radio"));
+
     private final SimpleVoiceRadio plugin;
     private final DisplayEntityManager displayEntityManager;
     private final SkinManager skinManager;
-    public static final NamespacedKey RADIO_KEY = NamespacedKey.fromString("radio");
 
     public Item(SimpleVoiceRadio plugin, DisplayEntityManager displayEntityManager, SkinManager skinManager) {
         this.plugin = plugin;
@@ -30,10 +36,17 @@ public class Item {
         this.skinManager = skinManager;
     }
 
+    public static boolean isRadioItem(ItemMeta meta) {
+        if (meta == null) return false;
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        return container.has(RADIO_KEY, PersistentDataType.BYTE) || container.has(LEGACY_RADIO_KEY, PersistentDataType.BYTE);
+    }
+
     public ItemStack getItem() {
         ItemStack item = new ItemStack(Material.PLAYER_HEAD);
         displayEntityManager.setSkullByValue(skinManager.getTextureConfig().getString("parsed_textures.item.value"), item);
         ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
 
         String displayName = plugin.getConfig().getString("radio.display-name", "&#f57542Radio");
         meta.displayName(MiniMessageSerializer.parse(displayName).decoration(TextDecoration.ITALIC, false));
@@ -43,11 +56,7 @@ public class Item {
             meta.lore(lore);
         }
 
-        meta.getPersistentDataContainer().set(
-                RADIO_KEY,
-                PersistentDataType.BOOLEAN,
-                true
-        );
+        meta.getPersistentDataContainer().set(RADIO_KEY, PersistentDataType.BYTE, (byte) 1);
         item.setItemMeta(meta);
 
         return item;
@@ -77,9 +86,9 @@ public class Item {
     public void registerCraft() {
         if (!plugin.getConfig().getBoolean("radio.craft.enabled", true)) return;
 
-        ItemStack item = getItem();
+        ItemStack radioItem = getItem();
         NamespacedKey key = new NamespacedKey(plugin, "radio");
-        ShapedRecipe recipe = new ShapedRecipe(key, item);
+        ShapedRecipe recipe = new ShapedRecipe(key, radioItem);
 
         try {
             List<String> recipeLines = plugin.getConfig().getStringList("radio.craft.recipe");
@@ -126,7 +135,7 @@ public class Item {
             for (char c : row.toCharArray()) {
                 RecipeChoice choice = choiceMap.get(c);
                 if (choice instanceof RecipeChoice.MaterialChoice materialChoice) {
-                    ingredients.add(new ItemStack(materialChoice.getChoices().getFirst()));
+                    ingredients.add(new ItemStack(materialChoice.getChoices().get(0)));
                 } else {
                     ingredients.add(new ItemStack(Material.AIR));
                 }

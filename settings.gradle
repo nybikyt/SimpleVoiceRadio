@@ -1,1 +1,2 @@
 rootProject.name = 'SimpleVoiceRadio'
+gradle.ext.pluginVersion = '0.0.8'

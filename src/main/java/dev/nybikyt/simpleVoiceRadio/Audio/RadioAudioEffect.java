@@ -1,35 +1,38 @@
-package dev.nybikyt.simpleVoiceRadio.Misc;
+package dev.nybikyt.simpleVoiceRadio.Audio;
 
-import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
 import java.util.Random;
 
 public class RadioAudioEffect {
+
     private static final float SAMPLE_RATE = 48000.0f;
     private static final int FRAME_SIZE = 960;
     private static final float MAX_SHORT = 32767.0f;
     private static final float LN_2 = (float) Math.log(2.0);
 
     private final Random random = new Random();
-    private final SimpleVoiceRadio plugin;
+    private final PluginConfig config;
+
+    private float severity;
+    private float centerFrequency;
+    private float bandwidth;
+    private float[] coefficients;
 
     private float lastInputSample1;
     private float lastInputSample2;
     private float lastOutputSample1;
     private float lastOutputSample2;
 
-    public RadioAudioEffect(SimpleVoiceRadio plugin) {
-        this.plugin = plugin;
+    public RadioAudioEffect(PluginConfig config) {
+        this.config = config;
     }
 
     public void apply(short[] data) {
         if (data.length != FRAME_SIZE) return;
 
-        float severity = Math.max(0.0f, Math.min(1.0f,
-                (float) plugin.getConfig().getDouble("audio-effects.severity", 0.05)));
-        float centerFrequency = (float) plugin.getConfig().getDouble("audio-effects.center_frequency", 750.0);
-        float bandwidth = (float) plugin.getConfig().getDouble("audio-effects.bandwidth", 4000.0);
-
-        float[] coeffs = computeCoefficients(centerFrequency, bandwidth, severity);
+        refreshCoefficients();
+        float severity = this.severity;
+        float[] coeffs = this.coefficients;
 
         float[] floats = new float[FRAME_SIZE];
         for (int i = 0; i < FRAME_SIZE; i++) {
@@ -48,6 +51,21 @@ public class RadioAudioEffect {
         for (int i = 0; i < FRAME_SIZE; i++) {
             data[i] = (short) Math.max(-32768, Math.min(32767, (int) (floats[i] * factor)));
         }
+    }
+
+    private void refreshCoefficients() {
+        float newSeverity = Math.max(0.0f, Math.min(1.0f, config.effectSeverity()));
+        float newCenterFrequency = config.effectCenterFrequency();
+        float newBandwidth = config.effectBandwidth();
+
+        if (coefficients != null && newSeverity == severity && newCenterFrequency == centerFrequency && newBandwidth == bandwidth) {
+            return;
+        }
+
+        severity = newSeverity;
+        centerFrequency = newCenterFrequency;
+        bandwidth = newBandwidth;
+        coefficients = computeCoefficients(centerFrequency, bandwidth, severity);
     }
 
     private float[] computeCoefficients(float centerFrequency, float bandwidth, float severity) {

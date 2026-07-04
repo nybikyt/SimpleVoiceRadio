@@ -17,7 +17,7 @@ public class MineSkin {
 
         this.CLIENT = MineSkinClient.builder()
                 .requestHandler(JsoupRequestHandler::new)
-                .userAgent("SimpleVoiceRadio/0.0.4")
+                .userAgent("SimpleVoiceRadio/" + plugin.getDescription().getVersion())
                 .apiKey(apiKey)
                 .build();
     }
