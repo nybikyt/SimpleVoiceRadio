@@ -34,10 +34,15 @@ import su.plo.voice.api.server.player.VoiceServerPlayer;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicLong;
 
-@Addon(id = "simple-voice-radio", scope = AddonLoaderScope.SERVER, version = "0.0.7", authors = {"Nybik_YT"})
+@Addon(
+        id = "simple-voice-radio",
+        scope = AddonLoaderScope.SERVER,
+        version = "0.0.8",
+        authors = {"Nybik_YT"}
+)
 public class PlasmoVoiceAddon implements AddonInitializer, VoiceAddon, VoiceBackend {
 
-    private static final String SOURCE_LINE_NAME = "radio";
+    private static final String SOURCE_LINE_NAME = "sv_radio";
     private static final int SOURCE_LINE_WEIGHT = 10;
     private static final String FALLBACK_ICON = "plasmovoice:textures/icons/speaker.png";
 
