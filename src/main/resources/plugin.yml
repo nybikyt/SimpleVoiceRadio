@@ -8,10 +8,11 @@ website: https://modrinth.com/plugin/simple-voice-radio
 description: Plugin that adds a radio block that lets players communicate over distances
 
 depend:
-  - voicechat
   - packetevents
 
 softdepend:
+  - voicechat
+  - PlasmoVoice
   - CustomDiscs
 
 commands:

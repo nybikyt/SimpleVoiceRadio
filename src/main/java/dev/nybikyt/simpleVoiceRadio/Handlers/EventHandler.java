@@ -10,7 +10,7 @@ import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.JukeboxManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
 import dev.nybikyt.simpleVoiceRadio.Utils.Scheduler;
-import dev.nybikyt.simpleVoiceRadio.SimpleVoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.Voice.VoiceAddon;
 import dev.nybikyt.simpleVoiceRadio.Audio.AntennaManager;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -53,10 +53,10 @@ public class EventHandler implements Listener {
     private final PluginConfig config;
     private final DataManager dataManager;
     private final DisplayEntityManager displayEntityManager;
-    private final SimpleVoiceAddon voiceAddon;
+    private final VoiceAddon voiceAddon;
     private final Item item;
 
-    public EventHandler(SimpleVoiceRadio plugin, PluginConfig config, DataManager dataManager, DisplayEntityManager displayEntityManager, SimpleVoiceAddon voiceAddon, Item item) {
+    public EventHandler(SimpleVoiceRadio plugin, PluginConfig config, DataManager dataManager, DisplayEntityManager displayEntityManager, VoiceAddon voiceAddon, Item item) {
         this.plugin = plugin;
         this.config = config;
         this.dataManager = dataManager;

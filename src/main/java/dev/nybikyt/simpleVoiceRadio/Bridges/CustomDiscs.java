@@ -1,16 +1,14 @@
 package dev.nybikyt.simpleVoiceRadio.Bridges;
 
-import de.maxhenkel.voicechat.api.opus.OpusDecoder;
-import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager.Radio;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager.RadioState;
 import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
-import dev.nybikyt.simpleVoiceRadio.SimpleVoiceAddon;
 import dev.nybikyt.simpleVoiceRadio.Audio.AudioRouter;
 import dev.nybikyt.simpleVoiceRadio.Audio.RadioAudioEffect;
+import dev.nybikyt.simpleVoiceRadio.Voice.VoiceBackend;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -30,18 +28,20 @@ public class CustomDiscs implements Listener {
     private final DataManager dataManager;
     private final DisplayEntityManager displayEntityManager;
     private final AudioRouter audioRouter;
+    private final VoiceBackend backend;
 
-    private record DiscProcessor(OpusDecoder decoder, OpusEncoder encoder, RadioAudioEffect effect, UUID streamId) {
+    private record DiscProcessor(VoiceBackend.Decoder decoder, VoiceBackend.Encoder encoder, RadioAudioEffect effect, UUID streamId) {
     }
 
     private final Map<Location, DiscProcessor> discProcessors = new ConcurrentHashMap<>();
 
-    public CustomDiscs(SimpleVoiceRadio plugin, PluginConfig config, DataManager dataManager, DisplayEntityManager displayEntityManager, AudioRouter audioRouter) {
+    public CustomDiscs(SimpleVoiceRadio plugin, PluginConfig config, DataManager dataManager, DisplayEntityManager displayEntityManager, AudioRouter audioRouter, VoiceBackend backend) {
         this.plugin = plugin;
         this.config = config;
         this.dataManager = dataManager;
         this.displayEntityManager = displayEntityManager;
         this.audioRouter = audioRouter;
+        this.backend = backend;
         this.api = CustomDiscsAPI.get();
 
         registerPacketHandler();
@@ -58,7 +58,7 @@ public class CustomDiscs implements Listener {
                     displayEntityManager.scheduleStateSkin(radioLocation, radio);
                 }
                 DiscProcessor processor = discProcessors.computeIfAbsent(radioLocation, k ->
-                        new DiscProcessor(SimpleVoiceAddon.getApi().createDecoder(), SimpleVoiceAddon.getApi().createEncoder(), new RadioAudioEffect(config), UUID.randomUUID()));
+                        new DiscProcessor(backend.createDecoder(), backend.createEncoder(), new RadioAudioEffect(config), UUID.randomUUID()));
                 audioRouter.handleDiscPacket(radioLocation, data, processor.effect(), processor.encoder(), processor.decoder(), processor.streamId());
             }
             return true;

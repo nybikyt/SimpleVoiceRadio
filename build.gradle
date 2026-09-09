@@ -14,6 +14,7 @@ repositories {
         url = "https://repo.papermc.io/repository/maven-public/"
     }
     maven { url = 'https://maven.maxhenkel.de/repository/public' }
+    maven { url = 'https://repo.plasmoverse.com/releases' }
     maven { url = 'https://repo.subkek.space/maven-public'}
     maven { url = 'https://repo.inventivetalent.org/repository/public/' }
     maven { url = 'https://repo.codemc.io/repository/maven-releases/' }
@@ -23,6 +24,7 @@ repositories {
 dependencies {
     compileOnly ("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
     compileOnly ("de.maxhenkel.voicechat:voicechat-api:2.6.0")
+    compileOnly ("su.plo.voice.api:server:2.1.13")
     compileOnly ("space.subkek:customdiscs-api:1.0.0-SNAPSHOT")
     compileOnly ("com.github.retrooper:packetevents-spigot:2.12.1")
 

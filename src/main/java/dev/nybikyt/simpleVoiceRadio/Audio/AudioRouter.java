@@ -1,11 +1,5 @@
 package dev.nybikyt.simpleVoiceRadio.Audio;
 
-import de.maxhenkel.voicechat.api.ServerLevel;
-import de.maxhenkel.voicechat.api.ServerPlayer;
-import de.maxhenkel.voicechat.api.VoicechatServerApi;
-import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
-import de.maxhenkel.voicechat.api.opus.OpusDecoder;
-import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager.BlockKey;
@@ -14,10 +8,9 @@ import dev.nybikyt.simpleVoiceRadio.Utils.DataManager.RadioState;
 import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
 import dev.nybikyt.simpleVoiceRadio.Utils.Scheduler;
-import dev.nybikyt.simpleVoiceRadio.SimpleVoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.Voice.VoiceBackend;
 import org.bukkit.Location;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +32,7 @@ public class AudioRouter {
     private final DataManager dataManager;
     private final DisplayEntityManager displayEntityManager;
     private final ChannelManager channelManager;
+    private final VoiceBackend backend;
     private final AntennaManager antennaManager;
     private final SignalManager signalManager;
 
@@ -52,12 +46,13 @@ public class AudioRouter {
     private record ListenerCacheEntry(boolean hasListeners, long expiresAt) {
     }
 
-    public AudioRouter(SimpleVoiceRadio plugin, PluginConfig config, DataManager dataManager, DisplayEntityManager displayEntityManager, ChannelManager channelManager) {
+    public AudioRouter(SimpleVoiceRadio plugin, PluginConfig config, DataManager dataManager, DisplayEntityManager displayEntityManager, ChannelManager channelManager, VoiceBackend backend) {
         this.plugin = plugin;
         this.config = config;
         this.dataManager = dataManager;
         this.displayEntityManager = displayEntityManager;
         this.channelManager = channelManager;
+        this.backend = backend;
         this.antennaManager = new AntennaManager(plugin, config, dataManager);
         this.signalManager = config.signalSystemActive()
                 ? new SignalManager(plugin, dataManager, antennaManager)
@@ -68,12 +63,12 @@ public class AudioRouter {
 
     private static final class SpeakerProcessor {
 
-        private final OpusDecoder decoder;
-        private final OpusEncoder encoder;
+        private final VoiceBackend.Decoder decoder;
+        private final VoiceBackend.Encoder encoder;
         private final RadioAudioEffect effect;
         private volatile long lastUsed;
 
-        private SpeakerProcessor(OpusDecoder decoder, OpusEncoder encoder, RadioAudioEffect effect) {
+        private SpeakerProcessor(VoiceBackend.Decoder decoder, VoiceBackend.Encoder encoder, RadioAudioEffect effect) {
             this.decoder = decoder;
             this.encoder = encoder;
             this.effect = effect;
@@ -113,10 +108,8 @@ public class AudioRouter {
         Map<Location, Radio> nearbyInputs = dataManager.findInputRadiosNear(speakerLocation, radius);
         if (nearbyInputs.isEmpty()) return;
 
-        SpeakerProcessor processor = speakerProcessors.computeIfAbsent(speakerId, id -> {
-            VoicechatServerApi api = SimpleVoiceAddon.getApi();
-            return new SpeakerProcessor(api.createDecoder(), api.createEncoder(), new RadioAudioEffect(config));
-        });
+        SpeakerProcessor processor = speakerProcessors.computeIfAbsent(speakerId, id ->
+                new SpeakerProcessor(backend.createDecoder(), backend.createEncoder(), new RadioAudioEffect(config)));
         processor.lastUsed = System.currentTimeMillis();
 
         byte[] processedData = applyRadioEffects(audioData, processor.effect, processor.decoder, processor.encoder);
@@ -155,7 +148,7 @@ public class AudioRouter {
         return dx * dx + dy * dy + dz * dz;
     }
 
-    public void handleDiscPacket(Location radioLocation, byte[] audioData, RadioAudioEffect effect, OpusEncoder encoder, OpusDecoder decoder, UUID streamId) {
+    public void handleDiscPacket(Location radioLocation, byte[] audioData, RadioAudioEffect effect, VoiceBackend.Encoder encoder, VoiceBackend.Decoder decoder, UUID streamId) {
         if (audioData == null || audioData.length == 0) return;
 
         Radio radio = dataManager.get(radioLocation);
@@ -188,10 +181,7 @@ public class AudioRouter {
     }
 
     public void playAudio(AudioStreamer.StreamSource source, Integer frequency, boolean loop) {
-        VoicechatServerApi api = SimpleVoiceAddon.getApi();
-        if (api == null) return;
-
-        OpusEncoder encoder = api.createEncoder();
+        VoiceBackend.Encoder encoder = backend.createEncoder();
         RadioAudioEffect effect = new RadioAudioEffect(config);
         UUID streamId = UUID.randomUUID();
 
@@ -253,7 +243,7 @@ public class AudioRouter {
     private void sendToChannel(Location location, byte[] audioData, UUID streamId) {
         if (!hasListeners(location)) return;
 
-        LocationalAudioChannel channel = channelManager.getChannel(location, streamId);
+        VoiceBackend.Channel channel = channelManager.getChannel(location, streamId);
         if (channel != null) channel.send(audioData);
     }
 
@@ -263,14 +253,7 @@ public class AudioRouter {
         ListenerCacheEntry cached = listenerCache.get(key);
         if (cached != null && now < cached.expiresAt()) return cached.hasListeners();
 
-        VoicechatServerApi api = SimpleVoiceAddon.getApi();
-        ServerLevel serverLevel = api.fromServerLevel(location.getWorld());
-        Collection<ServerPlayer> nearbyPlayers = api.getPlayersInRange(
-                serverLevel,
-                api.createPosition(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5),
-                (float) config.outputRadius()
-        );
-        boolean result = !nearbyPlayers.isEmpty();
+        boolean result = backend.hasPlayersInRange(location, config.outputRadius());
         listenerCache.put(key, new ListenerCacheEntry(result, now + LISTENER_CACHE_MILLIS));
         return result;
     }
@@ -282,7 +265,7 @@ public class AudioRouter {
         });
     }
 
-    private byte[] applyRadioEffects(byte[] opusData, RadioAudioEffect effect, OpusDecoder decoder, OpusEncoder encoder) {
+    private byte[] applyRadioEffects(byte[] opusData, RadioAudioEffect effect, VoiceBackend.Decoder decoder, VoiceBackend.Encoder encoder) {
         if (opusData.length == 0 || !config.effectsEnabled()) return opusData;
 
         try {

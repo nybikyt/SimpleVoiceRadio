@@ -1,6 +1,6 @@
 package dev.nybikyt.simpleVoiceRadio.Audio;
 
-import de.maxhenkel.voicechat.api.opus.OpusEncoder;
+import dev.nybikyt.simpleVoiceRadio.Voice.VoiceBackend;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -51,7 +51,7 @@ public final class AudioStreamer {
         }
     }
 
-    public static CompletableFuture<Void> streamAudio(StreamSource source, OpusEncoder opusEncoder, AudioChunkListener listener, RadioAudioEffect audioEffect, boolean applyEffect, boolean loop) {
+    public static CompletableFuture<Void> streamAudio(StreamSource source, VoiceBackend.Encoder opusEncoder, AudioChunkListener listener, RadioAudioEffect audioEffect, boolean applyEffect, boolean loop) {
         if (!STREAMING.compareAndSet(false, true)) {
             return CompletableFuture.failedFuture(new IllegalStateException("Already streaming"));
         }
@@ -77,7 +77,7 @@ public final class AudioStreamer {
         });
     }
 
-    private static void streamDecoded(AudioInputStream rawStream, OpusEncoder opusEncoder, AudioChunkListener listener, RadioAudioEffect audioEffect, boolean applyEffect) throws Exception {
+    private static void streamDecoded(AudioInputStream rawStream, VoiceBackend.Encoder opusEncoder, AudioChunkListener listener, RadioAudioEffect audioEffect, boolean applyEffect) throws Exception {
         try (AudioInputStream pcmStream = toPcm16(rawStream)) {
             AudioFormat format = pcmStream.getFormat();
             int channels = Math.max(1, format.getChannels());
@@ -130,7 +130,7 @@ public final class AudioStreamer {
 
     private static final class FramePump {
 
-        private final OpusEncoder encoder;
+        private final VoiceBackend.Encoder encoder;
         private final AudioChunkListener listener;
         private final RadioAudioEffect effect;
         private final boolean applyEffect;
@@ -138,7 +138,7 @@ public final class AudioStreamer {
         private int filled = 0;
         private long nextFrameTime = System.currentTimeMillis();
 
-        private FramePump(OpusEncoder encoder, AudioChunkListener listener, RadioAudioEffect effect, boolean applyEffect) {
+        private FramePump(VoiceBackend.Encoder encoder, AudioChunkListener listener, RadioAudioEffect effect, boolean applyEffect) {
             this.encoder = encoder;
             this.listener = listener;
             this.effect = effect;

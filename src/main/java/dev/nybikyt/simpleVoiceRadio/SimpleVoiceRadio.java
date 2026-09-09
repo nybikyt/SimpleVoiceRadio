@@ -1,7 +1,6 @@
 package dev.nybikyt.simpleVoiceRadio;
 
 import com.github.retrooper.packetevents.PacketEvents;
-import de.maxhenkel.voicechat.api.BukkitVoicechatService;
 import dev.nybikyt.simpleVoiceRadio.Handlers.CommandHandler;
 import dev.nybikyt.simpleVoiceRadio.Handlers.EventHandler;
 import dev.nybikyt.simpleVoiceRadio.Handlers.PacketHandler;
@@ -14,6 +13,9 @@ import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
 import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
 import dev.nybikyt.simpleVoiceRadio.Audio.AudioStreamer;
+import dev.nybikyt.simpleVoiceRadio.Voice.PlasmoVoiceLoader;
+import dev.nybikyt.simpleVoiceRadio.Voice.SimpleVoiceLoader;
+import dev.nybikyt.simpleVoiceRadio.Voice.VoiceAddon;
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,7 +38,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
     private Item item;
 
     @Nullable
-    private SimpleVoiceAddon voiceAddon;
+    private VoiceAddon voiceAddon;
 
     private static boolean classExists(String className) {
         try {
@@ -59,6 +61,11 @@ public final class SimpleVoiceRadio extends JavaPlugin {
                 .reEncodeByDefault(false)
                 .checkForUpdates(false);
         PacketEvents.getAPI().load();
+
+        if (getServer().getPluginManager().getPlugin("voicechat") == null
+                && getServer().getPluginManager().getPlugin("PlasmoVoice") != null) {
+            voiceAddon = PlasmoVoiceLoader.load(this);
+        }
     }
 
     @Override
@@ -92,12 +99,18 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         PacketHandler packetHandler = new PacketHandler(dataManager);
         packetHandler.registerPacketListener();
 
-        BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
-        if (service != null) {
-            voiceAddon = new SimpleVoiceAddon(this, pluginConfig, dataManager, displayEntityManager);
-            service.registerPlugin(voiceAddon);
+        if (getServer().getPluginManager().getPlugin("voicechat") != null) {
+            voiceAddon = SimpleVoiceLoader.load(this, pluginConfig, dataManager, displayEntityManager);
+            if (voiceAddon != null) {
+                LOGGER.info("Simple Voice Chat detected, using it as voice backend");
+            } else {
+                LOGGER.error("Error while loading addon! Bye :(");
+            }
+        } else if (voiceAddon != null) {
+            PlasmoVoiceLoader.enable(voiceAddon, pluginConfig, dataManager, displayEntityManager);
+            LOGGER.info("Plasmo Voice detected, using it as voice backend");
         } else {
-            LOGGER.error("Error while loading addon! Bye :(");
+            LOGGER.error("No supported voice chat plugin found! Install Simple Voice Chat or Plasmo Voice.");
         }
 
         EventHandler eventHandler = new EventHandler(this, pluginConfig, dataManager, displayEntityManager, voiceAddon, item);

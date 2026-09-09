@@ -1,10 +1,7 @@
 package dev.nybikyt.simpleVoiceRadio.Audio;
 
-import de.maxhenkel.voicechat.api.VoicechatServerApi;
-import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
-import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
-import dev.nybikyt.simpleVoiceRadio.SimpleVoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.Voice.VoiceBackend;
 import org.bukkit.Location;
 
 import java.util.Map;
@@ -13,11 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ChannelManager {
 
-    private final PluginConfig config;
+    private final VoiceBackend backend;
     private final Map<ChannelKey, Entry> channels = new ConcurrentHashMap<>();
 
-    public ChannelManager(PluginConfig config) {
-        this.config = config;
+    public ChannelManager(VoiceBackend backend) {
+        this.backend = backend;
     }
 
     private record ChannelKey(DataManager.BlockKey radio, UUID streamId) {
@@ -25,33 +22,22 @@ public class ChannelManager {
 
     private static final class Entry {
 
-        private final LocationalAudioChannel channel;
+        private final VoiceBackend.Channel channel;
         private volatile long lastUsed;
 
-        private Entry(LocationalAudioChannel channel) {
+        private Entry(VoiceBackend.Channel channel) {
             this.channel = channel;
             this.lastUsed = System.currentTimeMillis();
         }
     }
 
-    public LocationalAudioChannel getChannel(Location radioLocation, UUID streamId) {
-        VoicechatServerApi api = SimpleVoiceAddon.getApi();
-        if (api == null || radioLocation.getWorld() == null) return null;
+    public VoiceBackend.Channel getChannel(Location radioLocation, UUID streamId) {
+        if (radioLocation.getWorld() == null) return null;
 
         ChannelKey key = new ChannelKey(DataManager.BlockKey.of(radioLocation), streamId);
         Entry entry = channels.computeIfAbsent(key, k -> {
-            LocationalAudioChannel channel = api.createLocationalAudioChannel(
-                    UUID.randomUUID(),
-                    api.fromServerLevel(radioLocation.getWorld()),
-                    api.createPosition(
-                            radioLocation.getBlockX() + 0.5,
-                            radioLocation.getBlockY() + 0.5,
-                            radioLocation.getBlockZ() + 0.5
-                    )
-            );
+            VoiceBackend.Channel channel = backend.createChannel(radioLocation);
             if (channel == null) return null;
-            channel.setDistance((float) config.outputRadius());
-            channel.setCategory(SimpleVoiceAddon.getRadioCategory());
             return new Entry(channel);
         });
         if (entry == null) return null;

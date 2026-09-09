@@ -5,7 +5,7 @@ import dev.nybikyt.simpleVoiceRadio.Misc.RecipeHolder;
 import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
 import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
-import dev.nybikyt.simpleVoiceRadio.SimpleVoiceAddon;
+import dev.nybikyt.simpleVoiceRadio.Voice.VoiceAddon;
 import dev.nybikyt.simpleVoiceRadio.Audio.AudioStreamer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -43,9 +43,9 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
     private final PluginConfig config;
     private final Item item;
     private final SkinManager skinManager;
-    private final SimpleVoiceAddon voiceAddon;
+    private final VoiceAddon voiceAddon;
 
-    public CommandHandler(SimpleVoiceRadio plugin, PluginConfig config, Item item, SkinManager skinManager, SimpleVoiceAddon voiceAddon) {
+    public CommandHandler(SimpleVoiceRadio plugin, PluginConfig config, Item item, SkinManager skinManager, VoiceAddon voiceAddon) {
         this.plugin = plugin;
         this.config = config;
         this.item = item;
