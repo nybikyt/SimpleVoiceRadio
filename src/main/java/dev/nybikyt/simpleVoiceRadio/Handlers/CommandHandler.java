@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -38,6 +39,12 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
     private static final TextColor MISC_COLOR = TextColor.fromHexString("#778da9");
     private static final TextComponent PLAYBACK_ERROR = Component.text("Playback failed: ", ERROR_COLOR);
     private static final TextComponent START_STREAMING = Component.text("Streaming audio: ", SUCCESS_COLOR);
+    private static final Map<String, String> SUB_PERMISSIONS = Map.of(
+            "reload", "simple_voice_radio.reload_config",
+            "give", "simple_voice_radio.give",
+            "view_craft", "simple_voice_radio.can_view_craft",
+            "play_audio", "simple_voice_radio.play_audio"
+    );
 
     private final SimpleVoiceRadio plugin;
     private final PluginConfig config;
@@ -57,7 +64,14 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (args.length == 0) return false;
 
-        return switch (args[0].toLowerCase()) {
+        String subcommand = args[0].toLowerCase();
+        String permission = SUB_PERMISSIONS.get(subcommand);
+        if (permission != null && !sender.hasPermission(permission)) {
+            sender.sendMessage(Component.text("No permission.", ERROR_COLOR));
+            return true;
+        }
+
+        return switch (subcommand) {
             case "reload" -> handleReload(sender);
             case "give" -> handleGive(sender, args);
             case "view_craft" -> handleViewCraft(sender);
@@ -256,8 +270,12 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (args.length == 1) {
-            return filterByPrefix(Stream.of("reload", "give", "view_craft", "play_audio"), args[0]);
+            return filterByPrefix(Stream.of("reload", "give", "view_craft", "play_audio")
+                    .filter(subcommand -> sender.hasPermission(SUB_PERMISSIONS.get(subcommand))), args[0]);
         }
+
+        String permission = SUB_PERMISSIONS.get(args[0].toLowerCase());
+        if (permission == null || !sender.hasPermission(permission)) return Collections.emptyList();
 
         if (args.length == 2 && args[0].equalsIgnoreCase("give")) {
             return filterByPrefix(Stream.concat(

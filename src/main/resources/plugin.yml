@@ -18,7 +18,7 @@ softdepend:
 commands:
   simple_voice_radio:
     description: Main command for SimpleVoiceRadio
-    permission: simple_voice_radio.command
+    permission: simple_voice_radio.reload_config;simple_voice_radio.give;simple_voice_radio.can_view_craft;simple_voice_radio.play_audio
     usage: |
       /<command> reload
       /<command> give <player>
@@ -28,7 +28,7 @@ commands:
 
 permissions:
   simple_voice_radio.command:
-    description: Can player use the plugin's command?
+    description: Grants every /simple_voice_radio subcommand
     default: op
     children:
       simple_voice_radio.reload_config: true
