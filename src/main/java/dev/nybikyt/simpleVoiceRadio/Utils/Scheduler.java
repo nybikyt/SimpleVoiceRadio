@@ -2,6 +2,7 @@ package dev.nybikyt.simpleVoiceRadio.Utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -33,6 +34,14 @@ public final class Scheduler {
             Bukkit.getRegionScheduler().run(plugin, location, t -> task.run());
         } else {
             Bukkit.getScheduler().runTask(plugin, task);
+        }
+    }
+
+    public static void runFor(Plugin plugin, Entity entity, Runnable task) {
+        if (FOLIA) {
+            entity.getScheduler().run(plugin, t -> task.run(), null);
+        } else {
+            task.run();
         }
     }
 

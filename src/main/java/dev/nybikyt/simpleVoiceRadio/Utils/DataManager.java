@@ -16,7 +16,9 @@ import org.bukkit.entity.TextDisplay;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -323,10 +325,21 @@ public class DataManager {
             SimpleVoiceRadio.LOGGER.info("Loaded {} radio blocks", loaded);
         } catch (Exception e) {
             SimpleVoiceRadio.LOGGER.error("Error loading radio data", e);
+            backupUnreadableData();
         }
     }
 
-    private void save() {
+    private void backupUnreadableData() {
+        Path backup = jsonFile.toPath().resolveSibling(jsonFile.getName() + ".broken-" + System.currentTimeMillis());
+        try {
+            Files.copy(jsonFile.toPath(), backup);
+            SimpleVoiceRadio.LOGGER.warn("Unreadable radio data was kept as {}", backup.getFileName());
+        } catch (IOException e) {
+            SimpleVoiceRadio.LOGGER.error("Failed to back up unreadable radio data", e);
+        }
+    }
+
+    private synchronized void save() {
         JsonObject root = new JsonObject();
         root.addProperty("version", DATA_VERSION);
         JsonArray radios = new JsonArray();
@@ -362,13 +375,14 @@ public class DataManager {
                 Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
+            dirty.set(true);
             SimpleVoiceRadio.LOGGER.error("Error saving radio data", e);
         }
     }
 
     @SuppressWarnings("unchecked")
     private void migrateLegacy() {
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(legacyFile))) {
+        try (ObjectInputStream in = new LegacyObjectInputStream(new FileInputStream(legacyFile))) {
             Object obj = in.readObject();
             if (!(obj instanceof Map)) return;
             int migrated = 0;
@@ -397,6 +411,19 @@ public class DataManager {
             SimpleVoiceRadio.LOGGER.info("Migrated {} radio blocks from legacy storage", migrated);
         } catch (Exception e) {
             SimpleVoiceRadio.LOGGER.error("Error migrating legacy radio data", e);
+        }
+    }
+
+    private static final class LegacyObjectInputStream extends ObjectInputStream {
+
+        private LegacyObjectInputStream(InputStream in) throws IOException {
+            super(in);
+        }
+
+        @Override
+        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+            if (desc.getName().endsWith("DataManager$RadioData")) return RadioData.class;
+            return super.resolveClass(desc);
         }
     }
 

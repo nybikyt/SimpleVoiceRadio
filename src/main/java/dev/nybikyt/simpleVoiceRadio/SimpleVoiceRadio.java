@@ -10,20 +10,20 @@ import dev.nybikyt.simpleVoiceRadio.Misc.WindChargeFix.DefaultEntityExplodeListe
 import dev.nybikyt.simpleVoiceRadio.Misc.WindChargeFix.WindChargeEntityExplodeListener;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.Messages;
 import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
 import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
 import dev.nybikyt.simpleVoiceRadio.Audio.AudioStreamer;
 import dev.nybikyt.simpleVoiceRadio.Voice.PlasmoVoiceLoader;
 import dev.nybikyt.simpleVoiceRadio.Voice.SimpleVoiceLoader;
 import dev.nybikyt.simpleVoiceRadio.Voice.VoiceAddon;
-import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Objects;
 
@@ -36,6 +36,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
     private SkinManager skinManager;
     private DisplayEntityManager displayEntityManager;
     private Item item;
+    private PacketHandler packetHandler;
 
     @Nullable
     private VoiceAddon voiceAddon;
@@ -56,12 +57,6 @@ public final class SimpleVoiceRadio extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
-        PacketEvents.getAPI().getSettings()
-                .reEncodeByDefault(false)
-                .checkForUpdates(false);
-        PacketEvents.getAPI().load();
-
         if (getServer().getPluginManager().getPlugin("voicechat") == null
                 && getServer().getPluginManager().getPlugin("PlasmoVoice") != null) {
             voiceAddon = PlasmoVoiceLoader.load(this);
@@ -75,8 +70,6 @@ public final class SimpleVoiceRadio extends JavaPlugin {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
-
-        PacketEvents.getAPI().init();
 
         saveDefaultConfig();
         new File(getDataFolder(), "audio").mkdirs();
@@ -96,7 +89,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
         dataManager.load();
         dataManager.startAutoSave();
 
-        PacketHandler packetHandler = new PacketHandler(dataManager);
+        packetHandler = new PacketHandler(dataManager);
         packetHandler.registerPacketListener();
 
         if (getServer().getPluginManager().getPlugin("voicechat") != null) {
@@ -123,7 +116,7 @@ public final class SimpleVoiceRadio extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(eventHandler, this);
 
-        CommandHandler commandHandler = new CommandHandler(this, pluginConfig, item, skinManager, voiceAddon);
+        CommandHandler commandHandler = new CommandHandler(this, pluginConfig, new Messages(this), item, skinManager, voiceAddon);
         PluginCommand command = Objects.requireNonNull(getCommand("simple_voice_radio"));
         command.setExecutor(commandHandler);
         command.setTabCompleter(commandHandler);
@@ -138,6 +131,6 @@ public final class SimpleVoiceRadio extends JavaPlugin {
             voiceAddon.shutdown();
         }
         if (dataManager != null) dataManager.shutdown();
-        PacketEvents.getAPI().terminate();
+        if (packetHandler != null) PacketEvents.getAPI().getEventManager().unregisterListener(packetHandler);
     }
 }

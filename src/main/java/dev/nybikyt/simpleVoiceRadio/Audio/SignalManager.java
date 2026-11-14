@@ -73,6 +73,7 @@ public class SignalManager {
             for (Location location : outputs.keySet()) {
                 if (!location.isChunkLoaded()) continue;
                 BlockKey outputKey = BlockKey.of(location);
+                if (!antennaManager.hasClearance(outputKey)) continue;
                 if (!antennaManager.inRange(entry.getKey().transmitter(), outputKey)) continue;
                 desired.merge(outputKey, source.level(), Math::max);
             }
@@ -112,8 +113,10 @@ public class SignalManager {
     public void shutdown() {
         if (tickTask != null) tickTask.cancel();
         for (BlockKey outputKey : appliedLevels.keySet()) {
-            apply(outputKey, 0);
+            Location location = outputKey.toLocation();
+            if (location != null && location.isChunkLoaded()) JukeboxManager.applyDisc(location, 0);
         }
+        appliedLevels.clear();
         frequencySources.clear();
         directSources.clear();
     }

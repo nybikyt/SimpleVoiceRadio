@@ -33,15 +33,17 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.JukeboxInventory;
 
 import java.util.List;
 
@@ -82,7 +84,7 @@ public class EventHandler implements Listener {
 
         TextDisplay display = radio.getFrequencyDisplay();
         if (display != null) {
-            display.text(frequency > 0 ? displayEntityManager.formatFrequency(frequency) : Component.empty());
+            display.text(displayEntityManager.formatFrequency(frequency));
         }
         if (frequency <= 0 && config.redstoneFrequency()) {
             dataManager.updateState(location, RadioState.OUTPUT);
@@ -170,43 +172,39 @@ public class EventHandler implements Listener {
         breakRadio(block, radio, false, shouldDrop);
     }
 
-    @org.bukkit.event.EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onExplosion(BlockExplodeEvent event) {
-        event.blockList().removeIf(block -> {
-            Radio radio = dataManager.get(block.getLocation());
-            if (radio != null) {
-                breakRadio(block, radio, false, false);
-                return true;
-            }
-            return false;
-        });
+    @org.bukkit.event.EventHandler(ignoreCancelled = true)
+    public void onInventoryMoveItem(InventoryMoveItemEvent event) {
+        if (isRadioInventory(event.getSource()) || isRadioInventory(event.getDestination())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean isRadioInventory(Inventory inventory) {
+        if (!(inventory instanceof JukeboxInventory)) return false;
+        Location location = inventory.getLocation();
+        return location != null && dataManager.get(location) != null;
     }
 
     @org.bukkit.event.EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getHand() != EquipmentSlot.HAND || event.getClickedBlock() == null) {
-            return;
-        }
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) return;
 
         Block block = event.getClickedBlock();
         Radio radio = dataManager.get(block.getLocation());
         if (radio == null) return;
 
-        if (radio.getState() == RadioState.DESTROYED) {
-            event.setCancelled(true);
-            return;
-        }
+        event.setCancelled(true);
+        if (radio.getState() == RadioState.DESTROYED) return;
 
         Player player = event.getPlayer();
 
         ItemStack heldItem = event.getItem();
         if (heldItem != null && AntennaManager.isLightningRod(heldItem.getType())) {
-            event.setCancelled(true);
-            placeLightningRod(player, block, heldItem, event.getBlockFace());
+            placeLightningRod(player, block, heldItem, event.getBlockFace(), event.getHand());
             return;
         }
+        if (event.getHand() != EquipmentSlot.HAND) return;
 
-        event.setCancelled(true);
         boolean redstoneMode = config.redstoneFrequency();
         int currentPower = block.getBlockPower();
 
@@ -276,7 +274,7 @@ public class EventHandler implements Listener {
         destroyRadio(block.getLocation(), radio);
     }
 
-    private void placeLightningRod(Player player, Block radioBlock, ItemStack heldItem, BlockFace face) {
+    private void placeLightningRod(Player player, Block radioBlock, ItemStack heldItem, BlockFace face, EquipmentSlot hand) {
         Block target = radioBlock.getRelative(face);
         if (!target.getType().isAir()) return;
 
@@ -285,7 +283,7 @@ public class EventHandler implements Listener {
         rodData.setFacing(face);
         target.setBlockData(rodData, true);
 
-        BlockPlaceEvent placeEvent = new BlockPlaceEvent(target, replacedState, radioBlock, heldItem, player, true, EquipmentSlot.HAND);
+        BlockPlaceEvent placeEvent = new BlockPlaceEvent(target, replacedState, radioBlock, heldItem, player, true, hand);
         Bukkit.getPluginManager().callEvent(placeEvent);
         if (placeEvent.isCancelled() || !placeEvent.canBuild()) {
             replacedState.update(true, false);
@@ -296,7 +294,11 @@ public class EventHandler implements Listener {
             heldItem.setAmount(heldItem.getAmount() - 1);
         }
         player.getWorld().playSound(target.getLocation(), Sound.BLOCK_COPPER_PLACE, SoundCategory.BLOCKS, 1f, 1f);
-        player.swingMainHand();
+        if (hand == EquipmentSlot.HAND) {
+            player.swingMainHand();
+        } else {
+            player.swingOffHand();
+        }
     }
 
     @org.bukkit.event.EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -312,8 +314,11 @@ public class EventHandler implements Listener {
         if (radio.getState() == RadioState.DESTROYED) return;
 
         if (config.redstoneFrequency()) {
+            int power = event.getBlock().getBlockPower();
+            if (power == radio.getFrequency()) return;
+
             RadioState oldState = radio.getState();
-            updateRadioData(event.getBlock().getLocation(), radio, event.getBlock().getBlockPower());
+            updateRadioData(event.getBlock().getLocation(), radio, power);
 
             if (oldState != radio.getState()) {
                 invalidateChannels(event.getBlock().getLocation());

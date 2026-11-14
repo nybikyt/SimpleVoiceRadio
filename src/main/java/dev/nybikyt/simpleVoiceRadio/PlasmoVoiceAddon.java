@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Addon(
         id = "simple-voice-radio",
         scope = AddonLoaderScope.SERVER,
-        version = "0.0.8",
+        version = "0.0.9",
         authors = {"Nybik_YT"}
 )
 public class PlasmoVoiceAddon implements AddonInitializer, VoiceAddon, VoiceBackend {

@@ -96,8 +96,8 @@ public class AntennaManager {
         int requiredClearance = config.requiredClearance();
         int clearance = 0;
         int clearanceY = y;
-        while (clearance < requiredClearance && clearanceY <= world.getMaxHeight()) {
-            if (world.getBlockAt(x, clearanceY, z).getType().isOccluding()) break;
+        while (clearance < requiredClearance) {
+            if (clearanceY < world.getMaxHeight() && world.getBlockAt(x, clearanceY, z).getType().isOccluding()) break;
             clearance++;
             clearanceY++;
         }

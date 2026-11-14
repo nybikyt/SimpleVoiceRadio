@@ -3,13 +3,13 @@ package dev.nybikyt.simpleVoiceRadio.Handlers;
 import dev.nybikyt.simpleVoiceRadio.Misc.Item;
 import dev.nybikyt.simpleVoiceRadio.Misc.RecipeHolder;
 import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.Messages;
 import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
+import dev.nybikyt.simpleVoiceRadio.Utils.Scheduler;
 import dev.nybikyt.simpleVoiceRadio.Utils.SkinManager;
 import dev.nybikyt.simpleVoiceRadio.Voice.VoiceAddon;
 import dev.nybikyt.simpleVoiceRadio.Audio.AudioStreamer;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -34,11 +34,6 @@ import java.util.stream.Stream;
 
 public class CommandHandler implements CommandExecutor, TabCompleter {
 
-    private static final TextColor ERROR_COLOR = TextColor.fromHexString("#d64933");
-    private static final TextColor SUCCESS_COLOR = TextColor.fromHexString("#f57542");
-    private static final TextColor MISC_COLOR = TextColor.fromHexString("#778da9");
-    private static final TextComponent PLAYBACK_ERROR = Component.text("Playback failed: ", ERROR_COLOR);
-    private static final TextComponent START_STREAMING = Component.text("Streaming audio: ", SUCCESS_COLOR);
     private static final Map<String, String> SUB_PERMISSIONS = Map.of(
             "reload", "simple_voice_radio.reload_config",
             "give", "simple_voice_radio.give",
@@ -48,13 +43,15 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
 
     private final SimpleVoiceRadio plugin;
     private final PluginConfig config;
+    private final Messages messages;
     private final Item item;
     private final SkinManager skinManager;
     private final VoiceAddon voiceAddon;
 
-    public CommandHandler(SimpleVoiceRadio plugin, PluginConfig config, Item item, SkinManager skinManager, VoiceAddon voiceAddon) {
+    public CommandHandler(SimpleVoiceRadio plugin, PluginConfig config, Messages messages, Item item, SkinManager skinManager, VoiceAddon voiceAddon) {
         this.plugin = plugin;
         this.config = config;
+        this.messages = messages;
         this.item = item;
         this.skinManager = skinManager;
         this.voiceAddon = voiceAddon;
@@ -67,7 +64,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         String subcommand = args[0].toLowerCase();
         String permission = SUB_PERMISSIONS.get(subcommand);
         if (permission != null && !sender.hasPermission(permission)) {
-            sender.sendMessage(Component.text("No permission.", ERROR_COLOR));
+            sender.sendMessage(messages.get("no-permission"));
             return true;
         }
 
@@ -77,7 +74,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
             case "view_craft" -> handleViewCraft(sender);
             case "play_audio" -> handlePlayAudio(sender, args);
             default -> {
-                sender.sendMessage(Component.text("Unknown subcommand.", ERROR_COLOR));
+                sender.sendMessage(messages.get("unknown-subcommand"));
                 yield true;
             }
         };
@@ -85,9 +82,10 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
 
     private boolean handleReload(CommandSender sender) {
         config.reload();
+        messages.reload();
         skinManager.reloadConfig();
         item.reloadCraft();
-        sender.sendMessage(Component.text("Config has been reloaded!", SUCCESS_COLOR));
+        sender.sendMessage(messages.get("reload.done"));
         return true;
     }
 
@@ -96,21 +94,26 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
 
         List<Player> targets = resolveTargets(sender, args[1]);
         if (targets.isEmpty()) {
-            sender.sendMessage(Component.text("Player not found: " + args[1], ERROR_COLOR));
+            sender.sendMessage(messages.get("give.player-not-found", "player", args[1]));
             return true;
         }
-        targets.forEach(target -> target.getInventory().addItem(item.getItem()));
-        sender.sendMessage(Component.text("Radio has been given to " + targets.size() + " player(s)!", SUCCESS_COLOR));
+        targets.forEach(target -> Scheduler.runFor(plugin, target, () -> giveRadio(target)));
+        sender.sendMessage(messages.get("give.done", "count", String.valueOf(targets.size())));
         return true;
+    }
+
+    private void giveRadio(Player target) {
+        target.getInventory().addItem(item.getItem()).values()
+                .forEach(leftover -> target.getWorld().dropItemNaturally(target.getLocation(), leftover));
     }
 
     private boolean handleViewCraft(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(Component.text("Players only.", ERROR_COLOR));
+            sender.sendMessage(messages.get("players-only"));
             return true;
         }
         RecipeHolder holder = new RecipeHolder();
-        Inventory inventory = Bukkit.createInventory(holder, InventoryType.WORKBENCH, Component.text("Radio craft recipe"));
+        Inventory inventory = Bukkit.createInventory(holder, InventoryType.WORKBENCH, messages.get("view-craft.title"));
         holder.setInventory(inventory);
         inventory.setContents(item.getRecipeIngredients());
         player.openInventory(inventory);
@@ -128,18 +131,18 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
             case "url" -> {
                 return handlePlayAudioUrl(sender, args);
             }
-            default -> sender.sendMessage(Component.text("Unknown subcommand.", ERROR_COLOR));
+            default -> sender.sendMessage(messages.get("unknown-subcommand"));
         }
         return true;
     }
 
     private void handlePlayAudioStop(CommandSender sender) {
         if (!AudioStreamer.isStreaming()) {
-            sender.sendMessage(Component.text("Nothing is playing.", ERROR_COLOR));
+            sender.sendMessage(messages.get("play-audio.nothing-playing"));
             return;
         }
         AudioStreamer.stopStreaming();
-        sender.sendMessage(Component.text("Playback stopped.", SUCCESS_COLOR));
+        sender.sendMessage(messages.get("play-audio.stopped"));
     }
 
     private boolean handlePlayAudioFile(CommandSender sender, String[] args) {
@@ -152,11 +155,11 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         File audioDir = new File(plugin.getDataFolder(), "audio");
         File audioFile = new File(audioDir, parsed.value());
         if (!isInsideDirectory(audioFile, audioDir)) {
-            sender.sendMessage(Component.text("Invalid file path.", ERROR_COLOR));
+            sender.sendMessage(messages.get("play-audio.invalid-path"));
             return true;
         }
         if (!audioFile.exists()) {
-            sender.sendMessage(Component.text("File not found: ", ERROR_COLOR).append(Component.text(parsed.value(), MISC_COLOR)));
+            sender.sendMessage(messages.get("play-audio.file-not-found", "file", parsed.value()));
             return true;
         }
 
@@ -173,7 +176,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
 
         String url = parsed.value();
         if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            sender.sendMessage(Component.text("Invalid URL: must start with http:// or https://", ERROR_COLOR));
+            sender.sendMessage(messages.get("play-audio.invalid-url"));
             return true;
         }
 
@@ -183,11 +186,11 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
 
     private boolean canStartStream(CommandSender sender) {
         if (voiceAddon == null || voiceAddon.getAudioRouter() == null) {
-            sender.sendMessage(Component.text("Voice chat is not available.", ERROR_COLOR));
+            sender.sendMessage(messages.get("play-audio.voice-unavailable"));
             return false;
         }
         if (AudioStreamer.isStreaming()) {
-            sender.sendMessage(Component.text("Already streaming.", ERROR_COLOR));
+            sender.sendMessage(messages.get("play-audio.already-streaming"));
             return false;
         }
         return true;
@@ -199,7 +202,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
             voiceAddon.getAudioRouter().playAudio(source, parsed.frequency(), parsed.loop());
             sender.sendMessage(describeStream(parsed));
         } catch (Exception e) {
-            sender.sendMessage(PLAYBACK_ERROR.append(Component.text(String.valueOf(e.getMessage()), MISC_COLOR)));
+            sender.sendMessage(messages.get("play-audio.failed", "error", String.valueOf(e.getMessage())));
             SimpleVoiceRadio.LOGGER.warn("Playback failed: {}", e.toString());
         }
     }
@@ -220,11 +223,11 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         boolean loop = false;
         Integer frequency = null;
 
-        if (!rest.isEmpty() && rest.getLast().equalsIgnoreCase("loop")) {
+        if (rest.size() > 1 && rest.getLast().equalsIgnoreCase("loop")) {
             loop = true;
             rest.removeLast();
         }
-        if (!rest.isEmpty()) {
+        if (rest.size() > 1) {
             String last = rest.getLast();
             if (last.equalsIgnoreCase("all")) {
                 rest.removeLast();
@@ -242,12 +245,12 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
     }
 
     private Component describeStream(PlayArguments parsed) {
-        Component message = START_STREAMING.append(Component.text(parsed.value(), MISC_COLOR));
+        Component message = messages.get("play-audio.started", "source", parsed.value());
         if (parsed.frequency() != null) {
-            message = message.append(Component.text(" [freq " + parsed.frequency() + "]", MISC_COLOR));
+            message = message.append(messages.get("play-audio.started-frequency", "frequency", String.valueOf(parsed.frequency())));
         }
         if (parsed.loop()) {
-            message = message.append(Component.text(" [loop]", MISC_COLOR));
+            message = message.append(messages.get("play-audio.started-loop"));
         }
         return message;
     }

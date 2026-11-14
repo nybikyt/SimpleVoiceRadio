@@ -6,8 +6,7 @@ import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public final class SimpleVoiceLoader {
 

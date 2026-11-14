@@ -3,9 +3,13 @@ package dev.nybikyt.simpleVoiceRadio.Misc.WindChargeFix;
 import dev.nybikyt.simpleVoiceRadio.Handlers.EventHandler;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
 import dev.nybikyt.simpleVoiceRadio.Utils.DataManager.Radio;
+import org.bukkit.block.Block;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+
+import java.util.List;
 
 public class DefaultEntityExplodeListener implements Listener {
 
@@ -19,10 +23,19 @@ public class DefaultEntityExplodeListener implements Listener {
 
     @org.bukkit.event.EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityExplosion(EntityExplodeEvent event) {
-        event.blockList().removeIf(block -> {
+        handleExplosion(event.blockList());
+    }
+
+    @org.bukkit.event.EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onBlockExplosion(BlockExplodeEvent event) {
+        handleExplosion(event.blockList());
+    }
+
+    private void handleExplosion(List<Block> blocks) {
+        blocks.removeIf(block -> {
             Radio radio = dataManager.get(block.getLocation());
             if (radio != null) {
-                eventHandler.breakRadio(block, radio, false, false);
+                eventHandler.breakRadio(block, radio, true, false);
                 return true;
             }
             return false;

@@ -101,6 +101,7 @@ public class DisplayEntityManager {
     }
 
     public Component formatFrequency(int frequency) {
+        if (frequency <= 0) return Component.empty();
         return Component.text(
                 String.format(skinManager.getTextureConfig().getString("frequency_display.number_format", "%d"), frequency),
                 TextColor.fromHexString(skinManager.getTextureConfig().getString("frequency_display.color", "#AA0000"))

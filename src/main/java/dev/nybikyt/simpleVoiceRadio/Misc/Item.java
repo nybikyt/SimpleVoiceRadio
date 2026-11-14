@@ -18,6 +18,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -79,8 +80,9 @@ public class Item {
     }
 
     private void setIngredient(ShapedRecipe recipe, char key, String materialName) {
-        if (materialName == null || materialName.equalsIgnoreCase("AIR")) return;
-        recipe.setIngredient(key, Material.valueOf(materialName.trim().toUpperCase()));
+        String name = materialName.trim().toUpperCase(Locale.ROOT);
+        if (name.equals("AIR")) return;
+        recipe.setIngredient(key, Material.valueOf(name));
     }
 
     public void registerCraft() {
