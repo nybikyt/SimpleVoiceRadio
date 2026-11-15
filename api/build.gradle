@@ -1,0 +1,20 @@
+plugins {
+    id 'maven-publish'
+}
+
+base {
+    archivesName = 'SimpleVoiceRadio-api'
+}
+
+java {
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'simplevoiceradio-api'
+            from components.java
+        }
+    }
+}

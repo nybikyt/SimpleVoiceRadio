@@ -1,0 +1,41 @@
+# ===================================================== #
+#             SimpleVoiceRadio Messages                 #
+# Help/Support - https://discord.com/invite/WESPMeKUDe  #
+# ===================================================== #
+
+# Supports MiniMessage and legacy color codes
+# Don't touch words in {braces}, plugin replaces them
+
+no-permission: "<#d64933>No permission"
+unknown-subcommand: "<#d64933>Unknown subcommand"
+players-only: "<#d64933>Players only"
+
+reload:
+  done: "<#f57542>Config reloaded"
+
+give:
+  player-not-found: "<#d64933>Can't find player {player}"
+  done: "<#f57542>Gave radio to {count} player(s)"
+
+view-craft:
+  title: "Radio craft recipe"
+
+setblock:
+  invalid-position: "<#d64933>Invalid position"
+  not-loaded: "<#d64933>That position is not loaded"
+  already-radio: "<#d64933>There is already a radio at {x} {y} {z}"
+  done: "<#f57542>Placed radio at {x} {y} {z}"
+
+play-audio:
+  voice-unavailable: "<#d64933>Voice chat is not available"
+  already-streaming: "<#d64933>Already streaming"
+  nothing-playing: "<#d64933>Nothing is playing"
+  stopped: "<#f57542>Playback stopped"
+  invalid-path: "<#d64933>Invalid file path"
+  file-not-found: "<#d64933>Can't find file <#778da9>{file}"
+  invalid-url: "<#d64933>URL must start with http:// or https://"
+  failed: "<#d64933>Playback failed <#778da9>({error})"
+  started: "<#f57542>Now playing <#778da9>{source}"
+  # These two are added after "started" message
+  started-frequency: " <#778da9>[freq {frequency}]"
+  started-loop: " <#778da9>[loop]"

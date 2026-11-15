@@ -1,0 +1,114 @@
+plugins {
+    id("xyz.jpenilla.run-paper") version "3.1.0"
+    id("com.gradleup.shadow") version "9.6.1"
+}
+
+base {
+    archivesName = 'SimpleVoiceRadio'
+}
+
+repositories {
+    maven { url = 'https://maven.maxhenkel.de/repository/public' }
+    maven { url = 'https://repo.plasmoverse.com/releases' }
+    maven { url = 'https://repo.subkek.space/maven-public'}
+    maven { url = 'https://repo.inventivetalent.org/repository/public/' }
+    maven { url = 'https://repo.codemc.io/repository/maven-releases/' }
+    maven { url = 'https://repo.codemc.io/repository/maven-snapshots/' }
+}
+
+dependencies {
+    implementation project(':api')
+
+    compileOnly ("de.maxhenkel.voicechat:voicechat-api:2.6.27")
+    compileOnly ("su.plo.voice.api:server:2.1.17")
+    compileOnly ("space.subkek:customdiscs-api:1.0.0-SNAPSHOT")
+    compileOnly ("com.github.retrooper:packetevents-spigot:2.14.0")
+
+    implementation ("org.mineskin:java-client:3.2.6")
+    implementation ("org.mineskin:java-client-jsoup:3.2.6")
+    implementation ("com.googlecode.soundlibs:mp3spi:1.9.5.4")
+    implementation ("com.googlecode.soundlibs:vorbisspi:1.0.3.3")
+}
+
+def versionSources = layout.buildDirectory.dir('generated/sources/pluginVersion/java')
+
+def generatePluginVersion = tasks.register('generatePluginVersion') {
+    def pluginVersion = project.version.toString()
+    inputs.property('version', pluginVersion)
+    outputs.dir(versionSources)
+    doLast {
+        def file = versionSources.get().file('dev/nybikyt/simpleVoiceRadio/PluginVersion.java').asFile
+        file.parentFile.mkdirs()
+        file.text = """package dev.nybikyt.simpleVoiceRadio;
+
+public final class PluginVersion {
+
+    public static final String VERSION = "${pluginVersion}";
+
+    private PluginVersion() {
+    }
+}
+"""
+    }
+}
+
+sourceSets.main.java.srcDir(generatePluginVersion)
+
+jar {
+    archiveClassifier.set('plain')
+}
+
+shadowJar {
+    archiveClassifier.set('')
+
+    dependencies {
+        exclude(dependency('com.google.guava:.*'))
+        exclude(dependency('com.google.code.gson:.*'))
+        exclude(dependency('com.google.code.findbugs:.*'))
+        exclude(dependency('com.google.errorprone:.*'))
+        exclude(dependency('org.checkerframework:.*'))
+        exclude(dependency('junit:.*'))
+    }
+
+    relocate 'org.mineskin', 'org.nyt.simpleVoiceRadio.libs.mineskin'
+    relocate 'org.jsoup', 'org.nyt.simpleVoiceRadio.libs.jsoup'
+    relocate 'javazoom', 'org.nyt.simpleVoiceRadio.libs.javazoom'
+    relocate 'org.tritonus', 'org.nyt.simpleVoiceRadio.libs.tritonus'
+    relocate 'com.jcraft', 'org.nyt.simpleVoiceRadio.libs.jcraft'
+
+    mergeServiceFiles()
+    filesMatching('META-INF/services/**') {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+
+    exclude 'META-INF/*.SF'
+    exclude 'META-INF/*.DSA'
+    exclude 'META-INF/*.RSA'
+}
+
+build {
+    dependsOn shadowJar
+}
+
+tasks {
+    runServer {
+        minecraftVersion("1.21")
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset = 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+tasks.register('copyJarToServer', Copy) {
+    dependsOn shadowJar
+    from shadowJar.archiveFile
+    into 'C:/Users/Daniil/Desktop/server/plugins'
+}
+
+//build.finalizedBy copyJarToServer

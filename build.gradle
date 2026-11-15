@@ -1,108 +1,36 @@
-plugins {
-    id 'java'
-    id("xyz.jpenilla.run-paper") version "3.1.0"
-    id("com.gradleup.shadow") version "9.6.1"
-}
+subprojects {
+    apply plugin: 'java-library'
 
-group = 'dev.nybikyt'
-version = gradle.pluginVersion
+    group = 'dev.nybikyt'
+    version = gradle.pluginVersion
 
-repositories {
-    mavenCentral()
-    maven {
-        name = "papermc-repo"
-        url = "https://repo.papermc.io/repository/maven-public/"
+    repositories {
+        mavenCentral()
+        maven {
+            name = "papermc-repo"
+            url = "https://repo.papermc.io/repository/maven-public/"
+        }
     }
-    maven { url = 'https://maven.maxhenkel.de/repository/public' }
-    maven { url = 'https://repo.plasmoverse.com/releases' }
-    maven { url = 'https://repo.subkek.space/maven-public'}
-    maven { url = 'https://repo.inventivetalent.org/repository/public/' }
-    maven { url = 'https://repo.codemc.io/repository/maven-releases/' }
-    maven { url = 'https://repo.codemc.io/repository/maven-snapshots/' }
-}
-
-dependencies {
-    compileOnly ("io.papermc.paper:paper-api:${findProperty('paperApi') ?: '1.21-R0.1-SNAPSHOT'}")
-    compileOnly ("de.maxhenkel.voicechat:voicechat-api:2.6.27")
-    compileOnly ("su.plo.voice.api:server:2.1.17")
-    compileOnly ("space.subkek:customdiscs-api:1.0.0-SNAPSHOT")
-    compileOnly ("com.github.retrooper:packetevents-spigot:2.14.0")
-
-    implementation ("org.mineskin:java-client:3.2.6")
-    implementation ("org.mineskin:java-client-jsoup:3.2.6")
-    implementation ("com.googlecode.soundlibs:mp3spi:1.9.5.4")
-    implementation ("com.googlecode.soundlibs:vorbisspi:1.0.3.3")
-}
-
-shadowJar {
-    archiveClassifier.set('')
 
     dependencies {
-        exclude(dependency('com.google.guava:.*'))
-        exclude(dependency('com.google.code.gson:.*'))
-        exclude(dependency('com.google.code.findbugs:.*'))
-        exclude(dependency('com.google.errorprone:.*'))
-        exclude(dependency('org.checkerframework:.*'))
-        exclude(dependency('junit:.*'))
+        compileOnly ("io.papermc.paper:paper-api:${findProperty('paperApi') ?: '1.21-R0.1-SNAPSHOT'}")
     }
 
-    relocate 'org.mineskin', 'org.nyt.simpleVoiceRadio.libs.mineskin'
-    relocate 'org.jsoup', 'org.nyt.simpleVoiceRadio.libs.jsoup'
-    relocate 'javazoom', 'org.nyt.simpleVoiceRadio.libs.javazoom'
-    relocate 'org.tritonus', 'org.nyt.simpleVoiceRadio.libs.tritonus'
-    relocate 'com.jcraft', 'org.nyt.simpleVoiceRadio.libs.jcraft'
-
-    mergeServiceFiles()
-    filesMatching('META-INF/services/**') {
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    def targetJavaVersion = (findProperty('javaRelease') ?: 21) as int
+    java {
+        def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+        sourceCompatibility = javaVersion
+        targetCompatibility = javaVersion
+        if (JavaVersion.current() < javaVersion) {
+            toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+        }
     }
 
-    exclude 'META-INF/*.SF'
-    exclude 'META-INF/*.DSA'
-    exclude 'META-INF/*.RSA'
-}
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
 
-build {
-    dependsOn shadowJar
-}
-
-tasks {
-    runServer {
-        minecraftVersion("1.21")
+        if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+            options.release.set(targetJavaVersion)
+        }
     }
 }
-
-def targetJavaVersion = (findProperty('javaRelease') ?: 21) as int
-java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    sourceCompatibility = javaVersion
-    targetCompatibility = javaVersion
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release.set(targetJavaVersion)
-    }
-}
-
-processResources {
-    def props = [version: version]
-    inputs.properties props
-    filteringCharset = 'UTF-8'
-    filesMatching('plugin.yml') {
-        expand props
-    }
-}
-
-tasks.register('copyJarToServer', Copy) {
-    dependsOn shadowJar
-    from shadowJar.archiveFile
-    into 'C:/Users/Daniil/Desktop/server/plugins'
-}
-
-//build.finalizedBy copyJarToServer

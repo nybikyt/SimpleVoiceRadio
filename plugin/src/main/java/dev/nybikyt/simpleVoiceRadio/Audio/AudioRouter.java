@@ -1,0 +1,345 @@
+package dev.nybikyt.simpleVoiceRadio.Audio;
+
+import dev.nybikyt.simpleVoiceRadio.Handlers.ApiRadio;
+import dev.nybikyt.simpleVoiceRadio.SimpleVoiceRadio;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager.BlockKey;
+import dev.nybikyt.simpleVoiceRadio.Utils.DataManager.Radio;
+import dev.nybikyt.simpleVoiceRadio.api.RadioState;
+import dev.nybikyt.simpleVoiceRadio.Utils.DisplayEntityManager;
+import dev.nybikyt.simpleVoiceRadio.Utils.PluginConfig;
+import dev.nybikyt.simpleVoiceRadio.Utils.Scheduler;
+import dev.nybikyt.simpleVoiceRadio.Voice.VoiceBackend;
+import dev.nybikyt.simpleVoiceRadio.api.AudioType;
+import dev.nybikyt.simpleVoiceRadio.api.events.RadioAudioEvent;
+import dev.nybikyt.simpleVoiceRadio.api.events.RadioBroadcastEvent;
+import dev.nybikyt.simpleVoiceRadio.api.events.RadioDiscEvent;
+import dev.nybikyt.simpleVoiceRadio.api.events.RadioVoiceEvent;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class AudioRouter {
+
+    private static final long SPEAKER_IDLE_MILLIS = 30_000L;
+    private static final long CHANNEL_IDLE_MILLIS = 30_000L;
+    private static final long CLEANUP_PERIOD_TICKS = 200L;
+    private static final long LISTENER_CACHE_MILLIS = 250L;
+    private static final long BROADCAST_TARGETS_MILLIS = 500L;
+    private static final int FULL_SIGNAL_LEVEL = 15;
+
+    private final SimpleVoiceRadio plugin;
+    private final PluginConfig config;
+    private final DataManager dataManager;
+    private final DisplayEntityManager displayEntityManager;
+    private final ChannelManager channelManager;
+    private final VoiceBackend backend;
+    private final AntennaManager antennaManager;
+    private final SignalManager signalManager;
+
+    private final Map<UUID, SpeakerProcessor> speakerProcessors = new ConcurrentHashMap<>();
+    private final Map<BlockKey, ListenerCacheEntry> listenerCache = new ConcurrentHashMap<>();
+    private Scheduler.TaskHandle cleanupTask;
+
+    private volatile List<Location> broadcastTargets;
+    private volatile long broadcastTargetsExpireAt;
+
+    private record ListenerCacheEntry(boolean hasListeners, long expiresAt) {
+    }
+
+    public AudioRouter(SimpleVoiceRadio plugin, PluginConfig config, DataManager dataManager, DisplayEntityManager displayEntityManager, ChannelManager channelManager, VoiceBackend backend) {
+        this.plugin = plugin;
+        this.config = config;
+        this.dataManager = dataManager;
+        this.displayEntityManager = displayEntityManager;
+        this.channelManager = channelManager;
+        this.backend = backend;
+        this.antennaManager = new AntennaManager(plugin, config, dataManager);
+        this.signalManager = config.signalSystemActive()
+                ? new SignalManager(plugin, dataManager, antennaManager)
+                : null;
+
+        startCleanupTask();
+    }
+
+    private static final class SpeakerProcessor {
+
+        private final VoiceBackend.Decoder decoder;
+        private final VoiceBackend.Encoder encoder;
+        private final RadioAudioEffect effect;
+        private volatile long lastUsed;
+
+        private SpeakerProcessor(VoiceBackend.Decoder decoder, VoiceBackend.Encoder encoder, RadioAudioEffect effect) {
+            this.decoder = decoder;
+            this.encoder = encoder;
+            this.effect = effect;
+            this.lastUsed = System.currentTimeMillis();
+        }
+
+        private void close() {
+            decoder.close();
+            encoder.close();
+        }
+    }
+
+    public AntennaManager getAntennaManager() {
+        return antennaManager;
+    }
+
+    private void startCleanupTask() {
+        cleanupTask = Scheduler.runAsyncTimer(plugin, () -> {
+            long now = System.currentTimeMillis();
+            speakerProcessors.entrySet().removeIf(entry -> {
+                if (now - entry.getValue().lastUsed > SPEAKER_IDLE_MILLIS) {
+                    entry.getValue().close();
+                    channelManager.releaseStream(entry.getKey());
+                    return true;
+                }
+                return false;
+            });
+            channelManager.cleanupIdle(CHANNEL_IDLE_MILLIS);
+            listenerCache.values().removeIf(entry -> now >= entry.expiresAt());
+        }, CLEANUP_PERIOD_TICKS, CLEANUP_PERIOD_TICKS);
+    }
+
+    public void handleMicPacket(Player speaker, Location speakerLocation, byte[] audioData) {
+        if (audioData == null || audioData.length == 0) return;
+
+        UUID speakerId = speaker.getUniqueId();
+
+        double radius = config.inputSearchRadius();
+        Map<Location, Radio> nearbyInputs = dataManager.findInputRadiosNear(speakerLocation, radius);
+        if (nearbyInputs.isEmpty()) return;
+
+        SpeakerProcessor processor = speakerProcessors.computeIfAbsent(speakerId, id ->
+                new SpeakerProcessor(backend.createDecoder(), backend.createEncoder(), new RadioAudioEffect(config)));
+        long now = System.currentTimeMillis();
+        processor.lastUsed = now;
+
+        byte[] processedData = applyRadioEffects(audioData, processor.effect, processor.decoder, processor.encoder);
+
+        Map<Integer, Location> bestInputs = new HashMap<>();
+        Map<Integer, Double> bestDistances = new HashMap<>();
+        for (Map.Entry<Location, Radio> entry : nearbyInputs.entrySet()) {
+            int frequency = entry.getValue().getFrequency();
+            double distanceSquared = distanceSquaredToCenter(entry.getKey(), speakerLocation);
+            Double best = bestDistances.get(frequency);
+            if (best == null || distanceSquared < best) {
+                bestDistances.put(frequency, distanceSquared);
+                bestInputs.put(frequency, entry.getKey());
+            }
+        }
+
+        for (Map.Entry<Integer, Location> entry : bestInputs.entrySet()) {
+            int frequency = entry.getKey();
+            BlockKey transmitter = BlockKey.of(entry.getValue());
+            Radio input = nearbyInputs.get(entry.getValue());
+
+            if (!antennaManager.hasClearance(transmitter)) continue;
+            if (hasAudioListeners()) {
+                ApiRadio radio = new ApiRadio(plugin, entry.getValue(), input);
+                if (!new RadioVoiceEvent(radio, speaker, processedData).callEvent()) continue;
+            }
+            input.getPlayback().mark(AudioType.VOICE, speakerId, now);
+
+            if (signalManager != null) {
+                int level = SignalManager.calculateLevel(Math.sqrt(bestDistances.get(frequency)), radius);
+                signalManager.report(frequency, transmitter, speakerId, level);
+            }
+
+            sendToOutputs(transmitter, frequency, processedData, speakerId, AudioType.VOICE);
+        }
+    }
+
+    private static boolean hasAudioListeners() {
+        return RadioAudioEvent.getHandlerList().getRegisteredListeners().length > 0;
+    }
+
+    private static double distanceSquaredToCenter(Location block, Location point) {
+        double dx = block.getBlockX() + 0.5 - point.getX();
+        double dy = block.getBlockY() + 0.5 - point.getY();
+        double dz = block.getBlockZ() + 0.5 - point.getZ();
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    public void handleDiscPacket(Location radioLocation, byte[] audioData, RadioAudioEffect effect, VoiceBackend.Encoder encoder, VoiceBackend.Decoder decoder, UUID streamId) {
+        if (audioData == null || audioData.length == 0) return;
+
+        BlockKey transmitter = BlockKey.of(radioLocation);
+        Radio radio = dataManager.get(transmitter);
+        if (radio == null || radio.getFrequency() <= 0) return;
+
+        int frequency = radio.getFrequency();
+
+        if (!antennaManager.hasClearance(transmitter)) return;
+
+        byte[] processedData = config.effectsForDiscs()
+                ? applyRadioEffects(audioData, effect, decoder, encoder)
+                : audioData;
+
+        if (hasAudioListeners() && !new RadioDiscEvent(new ApiRadio(plugin, radioLocation, radio), processedData).callEvent()) return;
+        radio.getPlayback().mark(AudioType.DISC, null, System.currentTimeMillis());
+
+        if (signalManager != null) {
+            signalManager.report(frequency, transmitter, streamId, FULL_SIGNAL_LEVEL);
+        }
+
+        sendToOutputs(transmitter, frequency, processedData, streamId, AudioType.DISC);
+    }
+
+    private void sendToOutputs(BlockKey transmitter, int frequency, byte[] audioData, UUID streamId, AudioType type) {
+        long now = System.currentTimeMillis();
+        UUID speaker = type == AudioType.VOICE ? streamId : null;
+        dataManager.forEachRadio(RadioState.OUTPUT, frequency, (location, radio) -> {
+            BlockKey receiver = BlockKey.of(location);
+            if (!canReceive(transmitter, receiver, location)) return;
+            radio.getPlayback().mark(type, speaker, now);
+            sendToChannel(location, receiver, audioData, streamId);
+        });
+    }
+
+    private boolean canReceive(BlockKey transmitter, BlockKey receiver, Location location) {
+        return location.isChunkLoaded() && antennaManager.hasClearance(receiver) && antennaManager.inRange(transmitter, receiver);
+    }
+
+    public Map<Location, Radio> getReceivers(Location location, Radio radio) {
+        Map<Location, Radio> receivers = new HashMap<>();
+        RadioState state = radio.getState();
+        int frequency = radio.getFrequency();
+        if (state != RadioState.INPUT && state != RadioState.LISTEN || frequency <= 0) return receivers;
+
+        BlockKey transmitter = BlockKey.of(location);
+        if (!antennaManager.hasClearance(transmitter)) return receivers;
+
+        dataManager.forEachRadio(RadioState.OUTPUT, frequency, (receiverLocation, receiver) -> {
+            if (canReceive(transmitter, BlockKey.of(receiverLocation), receiverLocation)) receivers.put(receiverLocation, receiver);
+        });
+        return receivers;
+    }
+
+    public boolean playAudio(AudioStreamer.StreamSource source, Integer frequency, boolean loop) {
+        VoiceBackend.Encoder encoder = backend.createEncoder();
+        RadioAudioEffect effect = new RadioAudioEffect(config);
+        UUID streamId = UUID.randomUUID();
+
+        CompletableFuture<Void> stream = AudioStreamer.streamAudio(source, encoder, chunk -> broadcastAudio(chunk, frequency, streamId), effect, config.effectsForFiles(), loop);
+        boolean started = !stream.isCompletedExceptionally();
+        stream.whenComplete((result, ex) -> {
+                    encoder.close();
+                    if (unwrap(ex) instanceof IllegalStateException) return;
+                    if (ex != null) SimpleVoiceRadio.LOGGER.error("Audio playback failed: ", ex);
+                    broadcastTargets = null;
+                    resetRadios(RadioState.BROADCAST);
+                    channelManager.releaseStream(streamId);
+                });
+        return started;
+    }
+
+    private Throwable unwrap(Throwable ex) {
+        return ex instanceof CompletionException && ex.getCause() != null ? ex.getCause() : ex;
+    }
+
+    private void broadcastAudio(byte[] audioData, Integer frequency, UUID streamId) {
+        if (audioData == null || audioData.length == 0) return;
+
+        List<Location> targets = refreshBroadcastTargets(frequency);
+        if (targets.isEmpty()) return;
+        long now = System.currentTimeMillis();
+
+        for (Location location : targets) {
+            BlockKey key = BlockKey.of(location);
+            Radio radio = dataManager.get(key);
+            if (radio == null || !location.isChunkLoaded()) continue;
+            if (radio.getState() != RadioState.OUTPUT && radio.getState() != RadioState.BROADCAST) continue;
+            if (frequency != null && radio.getFrequency() != frequency) continue;
+            if (!antennaManager.hasClearance(key)) continue;
+            if (hasAudioListeners() && !new RadioBroadcastEvent(new ApiRadio(plugin, location, radio), audioData).callEvent()) continue;
+            radio.getPlayback().mark(AudioType.BROADCAST, null, now);
+
+            if (radio.getState() == RadioState.OUTPUT && dataManager.forceState(location, RadioState.BROADCAST)) {
+                displayEntityManager.scheduleStateSkin(location, radio);
+            }
+
+            if (signalManager != null) {
+                signalManager.reportDirect(key, streamId, FULL_SIGNAL_LEVEL);
+            }
+
+            sendToChannel(location, key, audioData, streamId);
+        }
+    }
+
+    private List<Location> refreshBroadcastTargets(Integer frequency) {
+        long now = System.currentTimeMillis();
+        List<Location> targets = broadcastTargets;
+        if (targets != null && now < broadcastTargetsExpireAt) return targets;
+
+        Map<Location, Radio> radios = new HashMap<>();
+        radios.putAll(dataManager.getRadios(RadioState.OUTPUT));
+        radios.putAll(dataManager.getRadios(RadioState.BROADCAST));
+        if (frequency != null) radios.values().removeIf(radio -> radio.getFrequency() != frequency);
+
+        targets = List.copyOf(radios.keySet());
+        broadcastTargets = targets;
+        broadcastTargetsExpireAt = now + BROADCAST_TARGETS_MILLIS;
+        return targets;
+    }
+
+    private void sendToChannel(Location location, BlockKey key, byte[] audioData, UUID streamId) {
+        if (!hasListeners(location, key)) return;
+
+        VoiceBackend.Channel channel = channelManager.getChannel(location, key, streamId);
+        if (channel != null) channel.send(audioData);
+    }
+
+    private boolean hasListeners(Location location, BlockKey key) {
+        long now = System.currentTimeMillis();
+        ListenerCacheEntry cached = listenerCache.get(key);
+        if (cached != null && now < cached.expiresAt()) return cached.hasListeners();
+
+        boolean result = backend.hasPlayersInRange(location, config.outputRadius());
+        listenerCache.put(key, new ListenerCacheEntry(result, now + LISTENER_CACHE_MILLIS));
+        return result;
+    }
+
+    public void resetRadios(RadioState state) {
+        dataManager.getRadios(state).forEach((location, radio) -> {
+            if (dataManager.forceState(location, RadioState.OUTPUT)) {
+                displayEntityManager.scheduleStateSkin(location, radio);
+            }
+        });
+    }
+
+    private byte[] applyRadioEffects(byte[] opusData, RadioAudioEffect effect, VoiceBackend.Decoder decoder, VoiceBackend.Encoder encoder) {
+        if (opusData.length == 0 || !config.effectsEnabled()) return opusData;
+
+        try {
+            short[] pcmData = decoder.decode(opusData);
+            if (pcmData == null || pcmData.length != 960) return opusData;
+            effect.apply(pcmData);
+            try {
+                return encoder.encode(pcmData);
+            } catch (AssertionError e) {
+                return opusData;
+            }
+        } catch (Exception e) {
+            return opusData;
+        }
+    }
+
+    public void shutdown() {
+        if (cleanupTask != null) cleanupTask.cancel();
+        if (signalManager != null) signalManager.shutdown();
+        antennaManager.shutdown();
+        speakerProcessors.values().forEach(SpeakerProcessor::close);
+        speakerProcessors.clear();
+        listenerCache.clear();
+        channelManager.clear();
+    }
+}
